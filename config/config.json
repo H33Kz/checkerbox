@@ -1,0 +1,47 @@
+{
+  "hardware": [
+    {
+      "site": "1",
+      "device": "genericuart",
+      "address": "ttyUSB0",
+      "baudrate": "9600"
+    },
+    {
+      "site": "2",
+      "device": "modbus",
+      "address": "COM6",
+      "baudrate": "4800"
+    },
+    {
+      "site": "2",
+      "device": "genericuart",
+      "address": "COM7"
+    }
+  ],
+  "sequence": [
+    {
+      "step_label": "STAGE1"
+    },
+    {
+      "step_label": "Do something",
+      "device": "name",
+      "timeout": "1000",
+      "function": "name",
+      "threshold": "name"
+    },
+    {
+      "step_label": "STAGE2"
+    },
+    {
+      "step_label": "Do other thing",
+      "device": "name",
+      "timeout": "3000",
+      "function": "name",
+      "threshold": "name"
+    }
+  ],
+  "misc_settings": {
+    "sites": 2,
+    "stages": 2
+  }
+}
