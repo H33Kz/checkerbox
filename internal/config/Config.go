@@ -41,16 +41,26 @@ misc_settings:
   stages: 2`
 
 type Config struct {
-	Hardware [][][]string
-	Sequence [][][]string
-	Misc     [][]string
+	path     string
+	hardware []interface{}
+	sequence []interface{}
+	misc     map[string]interface{}
 }
 
-func NewConfig(path string) *Config {
-	return &Config{}
+func NewConfig(path string) (*Config, error) {
+	hardware, sequence, misc, error := readConfigFile(path)
+	if error != nil {
+		return nil, error
+	}
+	return &Config{
+		path:     path,
+		hardware: hardware,
+		sequence: sequence,
+		misc:     misc,
+	}, nil
 }
 
-func ReadConfigFile(path string) ([]interface{}, []interface{}, map[string]interface{}, error) {
+func readConfigFile(path string) ([]interface{}, []interface{}, map[string]interface{}, error) {
 	jsonMatch, _ := regexp.MatchString("\\.json$", path)
 	yamlMatch, _ := regexp.MatchString("\\.(yaml|yml)", path)
 	// Open specified config file
@@ -76,19 +86,38 @@ func ReadConfigFile(path string) ([]interface{}, []interface{}, map[string]inter
 		var unmarshaledJSON map[string]interface{}
 		json.Unmarshal(data, &unmarshaledJSON)
 
-		var hardware []interface{} = unmarshaledJSON["hardware"].([]interface{})
-		var sequence []interface{} = unmarshaledJSON["sequence"].([]interface{})
-		var misc map[string]interface{} = unmarshaledJSON["misc_settings"].(map[string]interface{})
+		hardware := unmarshaledJSON["hardware"].([]interface{})
+		sequence := unmarshaledJSON["sequence"].([]interface{})
+		misc := unmarshaledJSON["misc_settings"].(map[string]interface{})
 		return hardware, sequence, misc, nil
 	} else if yamlMatch {
 		var unmarshaledYAML map[string]interface{}
 		yaml.Unmarshal(data, &unmarshaledYAML)
 
-		var hardware []interface{} = unmarshaledYAML["hardware"].([]interface{})
-		var sequence []interface{} = unmarshaledYAML["sequence"].([]interface{})
-		var misc map[string]interface{} = unmarshaledYAML["misc_settings"].(map[string]interface{})
+		hardware := unmarshaledYAML["hardware"].([]interface{})
+		sequence := unmarshaledYAML["sequence"].([]interface{})
+		misc := unmarshaledYAML["misc_settings"].(map[string]interface{})
 		return hardware, sequence, misc, nil
 	} else {
 		return nil, nil, nil, errors.New("file extension doesn't match any of supported types")
 	}
+}
+
+func (c *Config) PrintConfig() {
+	fmt.Println("Hardware list:")
+	for _, value := range c.hardware {
+		fmt.Println("Device name: ", value.(map[string]interface{})["device"])
+		fmt.Println("Baud Rate: ", value.(map[string]interface{})["baudrate"])
+		fmt.Println("---------------------")
+	}
+
+	fmt.Println("\nSequence:")
+	for _, value := range c.sequence {
+		fmt.Println("Step label: ", value.(map[string]interface{})["step_label"])
+		fmt.Println("Device: ", value.(map[string]interface{})["device"])
+		fmt.Println("---------------------")
+	}
+	fmt.Println("\nMisc: ")
+	fmt.Println("Sites: ", c.misc["sites"])
+	fmt.Println("Stages: ", c.misc["stages"])
 }
