@@ -42,9 +42,9 @@ misc_settings:
 
 type Config struct {
 	path     string
-	hardware []interface{}
-	sequence []interface{}
-	misc     map[string]interface{}
+	hardware []map[string]string
+	sequence []map[string]string
+	misc     map[string]string
 }
 
 func NewConfig(path string) (*Config, error) {
@@ -60,7 +60,7 @@ func NewConfig(path string) (*Config, error) {
 	}, nil
 }
 
-func readConfigFile(path string) ([]interface{}, []interface{}, map[string]interface{}, error) {
+func readConfigFile(path string) ([]map[string]string, []map[string]string, map[string]string, error) {
 	jsonMatch, _ := regexp.MatchString("\\.json$", path)
 	yamlMatch, _ := regexp.MatchString("\\.(yaml|yml)", path)
 	// Open specified config file
@@ -82,39 +82,71 @@ func readConfigFile(path string) ([]interface{}, []interface{}, map[string]inter
 		}
 	}
 
+	var hardware []interface{}
+	var sequence []interface{}
+	var misc map[string]interface{}
+
 	if jsonMatch {
 		var unmarshaledJSON map[string]interface{}
 		json.Unmarshal(data, &unmarshaledJSON)
 
-		hardware := unmarshaledJSON["hardware"].([]interface{})
-		sequence := unmarshaledJSON["sequence"].([]interface{})
-		misc := unmarshaledJSON["misc_settings"].(map[string]interface{})
-		return hardware, sequence, misc, nil
+		hardware = unmarshaledJSON["hardware"].([]interface{})
+		sequence = unmarshaledJSON["sequence"].([]interface{})
+		misc = unmarshaledJSON["misc_settings"].(map[string]interface{})
 	} else if yamlMatch {
 		var unmarshaledYAML map[string]interface{}
 		yaml.Unmarshal(data, &unmarshaledYAML)
 
-		hardware := unmarshaledYAML["hardware"].([]interface{})
-		sequence := unmarshaledYAML["sequence"].([]interface{})
-		misc := unmarshaledYAML["misc_settings"].(map[string]interface{})
-		return hardware, sequence, misc, nil
+		hardware = unmarshaledYAML["hardware"].([]interface{})
+		sequence = unmarshaledYAML["sequence"].([]interface{})
+		misc = unmarshaledYAML["misc_settings"].(map[string]interface{})
 	} else {
 		return nil, nil, nil, errors.New("file extension doesn't match any of supported types")
 	}
+
+	finalHardwareMap := make([]map[string]string, 1)
+	for _, value := range hardware {
+		intermediateMapNode := make(map[string]string)
+		for key, mapVal := range value.(map[string]interface{}) {
+			strKey := fmt.Sprintf("%v", key)
+			strVal := fmt.Sprintf("%v", mapVal)
+			intermediateMapNode[strKey] = strVal
+		}
+		finalHardwareMap = append(finalHardwareMap, intermediateMapNode)
+	}
+
+	finalSequenceMap := make([]map[string]string, 1)
+	for _, value := range sequence {
+		intermediateMapNode := make(map[string]string)
+		for key, mapVal := range value.(map[string]interface{}) {
+			strKey := fmt.Sprintf("%v", key)
+			strVal := fmt.Sprintf("%v", mapVal)
+			intermediateMapNode[strKey] = strVal
+		}
+		finalSequenceMap = append(finalSequenceMap, intermediateMapNode)
+	}
+
+	finalMiscMap := make(map[string]string)
+	for key, value := range misc {
+		strKey := fmt.Sprintf("%v", key)
+		strVal := fmt.Sprintf("%v", value)
+		finalMiscMap[strKey] = strVal
+	}
+	return finalHardwareMap, finalSequenceMap, finalMiscMap, nil
 }
 
 func (c *Config) PrintConfig() {
 	fmt.Println("Hardware list:")
 	for _, value := range c.hardware {
-		fmt.Println("Device name: ", value.(map[string]interface{})["device"])
-		fmt.Println("Baud Rate: ", value.(map[string]interface{})["baudrate"])
+		fmt.Println("Device name: ", value["device"])
+		fmt.Println("Baud Rate: ", value["baudrate"])
 		fmt.Println("---------------------")
 	}
 
 	fmt.Println("\nSequence:")
 	for _, value := range c.sequence {
-		fmt.Println("Step label: ", value.(map[string]interface{})["step_label"])
-		fmt.Println("Device: ", value.(map[string]interface{})["device"])
+		fmt.Println("Step label: ", value["step_label"])
+		fmt.Println("Device: ", value["device"])
 		fmt.Println("---------------------")
 	}
 	fmt.Println("\nMisc: ")
