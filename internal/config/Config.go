@@ -60,6 +60,18 @@ func NewConfig(path string) (*Config, error) {
 	}, nil
 }
 
+func (c *Config) GetHardwareConfig() []map[string]string {
+	return c.hardware
+}
+
+func (c *Config) GetSequenceConfig() []map[string]string {
+	return c.sequence
+}
+
+func (c *Config) GetMiscConfig() map[string]string {
+	return c.misc
+}
+
 func readConfigFile(path string) ([]map[string]string, []map[string]string, map[string]string, error) {
 	jsonMatch, _ := regexp.MatchString("\\.json$", path)
 	yamlMatch, _ := regexp.MatchString("\\.(yaml|yml)", path)
