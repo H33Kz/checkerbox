@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -73,12 +74,13 @@ func (c *Config) GetMiscConfig() map[string]string {
 }
 
 func readConfigFile(path string) ([]map[string]string, []map[string]string, map[string]string, error) {
+	// Check for json or yaml match
 	jsonMatch, _ := regexp.MatchString("\\.json$", path)
 	yamlMatch, _ := regexp.MatchString("\\.(yaml|yml)", path)
 	// Open specified config file
 	data, err := os.ReadFile(path)
 	// If file doesn't open, check if error reads as missing file, if it does load sample config from const
-	// If error is different stop execution
+	// Otherwise propagate error
 	if err != nil {
 		match, err2 := regexp.MatchString(".*no such file or directory.*", err.Error())
 		if err2 != nil {
@@ -94,10 +96,12 @@ func readConfigFile(path string) ([]map[string]string, []map[string]string, map[
 		}
 	}
 
+	// Variables for holding initial umarshaled config
 	var hardware []interface{}
 	var sequence []interface{}
 	var misc map[string]interface{}
 
+	// Unmarshal based on file extension or propagate error of unsupported file type
 	if jsonMatch {
 		var unmarshaledJSON map[string]interface{}
 		json.Unmarshal(data, &unmarshaledJSON)
@@ -116,12 +120,15 @@ func readConfigFile(path string) ([]map[string]string, []map[string]string, map[
 		return nil, nil, nil, errors.New("file extension doesn't match any of supported types")
 	}
 
+	// Remap unmarshaled config to be map of strings keyed by strings or arrays of this maps
 	finalHardwareMap := make([]map[string]string, 1)
 	for _, value := range hardware {
 		intermediateMapNode := make(map[string]string)
 		for key, mapVal := range value.(map[string]interface{}) {
 			strKey := fmt.Sprintf("%v", key)
 			strVal := fmt.Sprintf("%v", mapVal)
+			strKey = strings.ToLower(strKey)
+			strVal = strings.ToLower(strVal)
 			intermediateMapNode[strKey] = strVal
 		}
 		finalHardwareMap = append(finalHardwareMap, intermediateMapNode)
@@ -133,6 +140,8 @@ func readConfigFile(path string) ([]map[string]string, []map[string]string, map[
 		for key, mapVal := range value.(map[string]interface{}) {
 			strKey := fmt.Sprintf("%v", key)
 			strVal := fmt.Sprintf("%v", mapVal)
+			strKey = strings.ToLower(strKey)
+			strVal = strings.ToLower(strVal)
 			intermediateMapNode[strKey] = strVal
 		}
 		finalSequenceMap = append(finalSequenceMap, intermediateMapNode)
@@ -142,6 +151,8 @@ func readConfigFile(path string) ([]map[string]string, []map[string]string, map[
 	for key, value := range misc {
 		strKey := fmt.Sprintf("%v", key)
 		strVal := fmt.Sprintf("%v", value)
+		strKey = strings.ToLower(strKey)
+		strVal = strings.ToLower(strVal)
 		finalMiscMap[strKey] = strVal
 	}
 	return finalHardwareMap, finalSequenceMap, finalMiscMap, nil
