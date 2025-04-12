@@ -121,27 +121,25 @@ func readConfigFile(path string) ([]map[string]string, []map[string]string, map[
 	}
 
 	// Remap unmarshaled config to be map of strings keyed by strings or arrays of this maps
-	finalHardwareMap := make([]map[string]string, 1)
+	finalHardwareMap := make([]map[string]string, 0)
 	for _, value := range hardware {
 		intermediateMapNode := make(map[string]string)
 		for key, mapVal := range value.(map[string]interface{}) {
 			strKey := fmt.Sprintf("%v", key)
 			strVal := fmt.Sprintf("%v", mapVal)
 			strKey = strings.ToLower(strKey)
-			strVal = strings.ToLower(strVal)
 			intermediateMapNode[strKey] = strVal
 		}
 		finalHardwareMap = append(finalHardwareMap, intermediateMapNode)
 	}
 
-	finalSequenceMap := make([]map[string]string, 1)
+	finalSequenceMap := make([]map[string]string, 0)
 	for _, value := range sequence {
 		intermediateMapNode := make(map[string]string)
 		for key, mapVal := range value.(map[string]interface{}) {
 			strKey := fmt.Sprintf("%v", key)
 			strVal := fmt.Sprintf("%v", mapVal)
 			strKey = strings.ToLower(strKey)
-			strVal = strings.ToLower(strVal)
 			intermediateMapNode[strKey] = strVal
 		}
 		finalSequenceMap = append(finalSequenceMap, intermediateMapNode)
@@ -152,7 +150,6 @@ func readConfigFile(path string) ([]map[string]string, []map[string]string, map[
 		strKey := fmt.Sprintf("%v", key)
 		strVal := fmt.Sprintf("%v", value)
 		strKey = strings.ToLower(strKey)
-		strVal = strings.ToLower(strVal)
 		finalMiscMap[strKey] = strVal
 	}
 	return finalHardwareMap, finalSequenceMap, finalMiscMap, nil
