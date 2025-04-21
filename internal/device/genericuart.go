@@ -1,6 +1,8 @@
 package device
 
 import (
+	"checkerbox/internal/event"
+	"checkerbox/internal/test"
 	"errors"
 	"fmt"
 	"strconv"
@@ -9,9 +11,9 @@ import (
 )
 
 type GenericUart struct {
-	site int
-
-	port serial.Port
+	EventChannel chan event.Event
+	site         int
+	port         serial.Port
 }
 
 func NewGenericUart(deviceMap map[string]string) (*GenericUart, []error) {
@@ -33,16 +35,27 @@ func NewGenericUart(deviceMap map[string]string) (*GenericUart, []error) {
 	}
 
 	return &GenericUart{
-		site: int(site),
-		port: port,
+		site:         int(site),
+		port:         port,
+		EventChannel: make(chan event.Event),
 	}, errorTable
 }
 
-func initPort(addres string, baudrate int) (serial.Port, error) {
-	port, error := serial.Open(addres, &serial.Mode{
-		BaudRate: baudrate,
-	})
-	return port, error
+func (u *GenericUart) GetEventChannel() chan event.Event {
+	return u.EventChannel
+}
+
+func (u *GenericUart) SequenceEventHandler(resultChannel chan test.Result) {
+	for receivedEvent := range u.EventChannel {
+		sequenceEvent, ok := receivedEvent.Data.(event.SequenceEvent)
+		if !ok || sequenceEvent.DeviceName != "genericuart" || sequenceEvent.Site != u.site {
+			continue
+		}
+
+		// TODO Proper event handling for sequence event
+		fmt.Println("Received a proper event")
+		resultChannel <- test.Result{Pass: true, Message: "Event handled and passed"}
+	}
 }
 
 func (u *GenericUart) FunctionResolver() {
@@ -50,4 +63,11 @@ func (u *GenericUart) FunctionResolver() {
 
 func (u *GenericUart) Print() {
 	fmt.Println("GenericUart device created for site: " + fmt.Sprintf("%v", u.site))
+}
+
+func initPort(addres string, baudrate int) (serial.Port, error) {
+	port, error := serial.Open(addres, &serial.Mode{
+		BaudRate: baudrate,
+	})
+	return port, error
 }
