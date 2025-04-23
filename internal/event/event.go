@@ -11,6 +11,8 @@ type SequenceEvent struct {
 	Function   string
 	Site       int
 	Timeout    int
+	Threshold  string
+	Data       string
 }
 
 type EventBus struct {
