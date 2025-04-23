@@ -7,7 +7,7 @@ import (
 
 type Device interface {
 	SequenceEventHandler(chan test.Result)
-	FunctionResolver()
+	functionResolver(event.SequenceEvent) test.Result
 	GetEventChannel() chan event.Event
 	Print()
 }

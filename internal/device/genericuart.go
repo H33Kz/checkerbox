@@ -45,6 +45,14 @@ func (u *GenericUart) GetEventChannel() chan event.Event {
 	return u.EventChannel
 }
 
+func initPort(addres string, baudrate int) (serial.Port, error) {
+	port, error := serial.Open(addres, &serial.Mode{
+		BaudRate: baudrate,
+	})
+	port.SetReadTimeout(1000)
+	return port, error
+}
+
 func (u *GenericUart) SequenceEventHandler(resultChannel chan test.Result) {
 	for receivedEvent := range u.EventChannel {
 		sequenceEvent, ok := receivedEvent.Data.(event.SequenceEvent)
@@ -52,22 +60,46 @@ func (u *GenericUart) SequenceEventHandler(resultChannel chan test.Result) {
 			continue
 		}
 
-		// TODO Proper event handling for sequence event
-		fmt.Println("Received a proper event")
-		resultChannel <- test.Result{Pass: true, Message: "Event handled and passed"}
+		resultChannel <- u.functionResolver(sequenceEvent)
 	}
 }
 
-func (u *GenericUart) FunctionResolver() {
+func (u *GenericUart) functionResolver(sequenceEvent event.SequenceEvent) test.Result {
+	switch sequenceEvent.Function {
+	case "Read":
+		return u.read(sequenceEvent)
+	case "Write":
+		return u.write(sequenceEvent)
+	default:
+		return test.Result{Pass: false, Message: "No function with name: "}
+	}
+}
+
+func (u *GenericUart) read(sequenceEvent event.SequenceEvent) test.Result {
+	buff := make([]byte, 128)
+	n, err := u.port.Read(buff)
+	if err != nil {
+		return test.Result{Pass: false, Message: err.Error()}
+	}
+	if sequenceEvent.Threshold == "" {
+		return test.Result{Pass: true, Message: string(buff[:n])}
+	}
+	if sequenceEvent.Threshold == string(buff[:n]) {
+		return test.Result{Pass: true, Message: string(buff[:n])}
+	} else {
+		return test.Result{Pass: false, Message: string(buff[:n])}
+	}
+}
+
+func (u *GenericUart) write(sequenceEvent event.SequenceEvent) test.Result {
+	_, err := u.port.Write([]byte(sequenceEvent.Data))
+	if err != nil {
+		return test.Result{Pass: false, Message: err.Error()}
+	} else {
+		return test.Result{Pass: true, Message: "Sent: " + sequenceEvent.Data}
+	}
 }
 
 func (u *GenericUart) Print() {
 	fmt.Println("GenericUart device created for site: " + fmt.Sprintf("%v", u.site))
-}
-
-func initPort(addres string, baudrate int) (serial.Port, error) {
-	port, error := serial.Open(addres, &serial.Mode{
-		BaudRate: baudrate,
-	})
-	return port, error
 }
