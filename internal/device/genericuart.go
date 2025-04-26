@@ -71,7 +71,7 @@ func (u *GenericUart) functionResolver(sequenceEvent event.SequenceEvent) test.R
 	case "Write":
 		return u.write(sequenceEvent)
 	default:
-		return test.Result{Pass: false, Message: "No function with name: "}
+		return test.Result{Result: test.Error, Message: "No function with name: "}
 	}
 }
 
@@ -79,24 +79,25 @@ func (u *GenericUart) read(sequenceEvent event.SequenceEvent) test.Result {
 	buff := make([]byte, 128)
 	n, err := u.port.Read(buff)
 	if err != nil {
-		return test.Result{Pass: false, Message: err.Error()}
+		return test.Result{Result: test.Error, Message: err.Error()}
 	}
+	readBuff := string(buff[:n])
 	if sequenceEvent.Threshold == "" {
-		return test.Result{Pass: true, Message: string(buff[:n])}
+		return test.Result{Result: test.Done, Message: readBuff}
 	}
 	if sequenceEvent.Threshold == string(buff[:n]) {
-		return test.Result{Pass: true, Message: string(buff[:n])}
+		return test.Result{Result: test.Pass, Message: readBuff}
 	} else {
-		return test.Result{Pass: false, Message: string(buff[:n])}
+		return test.Result{Result: test.Fail, Message: readBuff}
 	}
 }
 
 func (u *GenericUart) write(sequenceEvent event.SequenceEvent) test.Result {
 	_, err := u.port.Write([]byte(sequenceEvent.Data))
 	if err != nil {
-		return test.Result{Pass: false, Message: err.Error()}
+		return test.Result{Result: test.Error, Message: err.Error()}
 	} else {
-		return test.Result{Pass: true, Message: "Sent: " + sequenceEvent.Data}
+		return test.Result{Result: test.Done, Message: "Sent: " + sequenceEvent.Data}
 	}
 }
 
