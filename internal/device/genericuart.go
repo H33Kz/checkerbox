@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"go.bug.st/serial"
 )
@@ -70,8 +71,20 @@ func (u *GenericUart) functionResolver(sequenceEvent event.SequenceEvent) test.R
 		return u.read(sequenceEvent)
 	case "Write":
 		return u.write(sequenceEvent)
+	case "Send-Receive":
+		return u.sendReceive(sequenceEvent)
 	default:
-		return test.Result{Result: test.Error, Message: "No function with name: "}
+		return test.Result{Result: test.Error, Message: "Function not found: " + sequenceEvent.Label}
+	}
+}
+
+func (u *GenericUart) sendReceive(sequenceEvent event.SequenceEvent) test.Result {
+	writeResult := u.write(sequenceEvent)
+	if writeResult.Result == test.Error {
+		return writeResult
+	} else {
+		time.Sleep(time.Millisecond * 20)
+		return u.read(sequenceEvent)
 	}
 }
 
@@ -81,7 +94,7 @@ func (u *GenericUart) read(sequenceEvent event.SequenceEvent) test.Result {
 	if err != nil {
 		return test.Result{Result: test.Error, Message: err.Error()}
 	}
-	readBuff := string(buff[:n])
+	readBuff := "Rx: " + string(buff[:n])
 	if sequenceEvent.Threshold == "" {
 		return test.Result{Result: test.Done, Message: readBuff}
 	}
@@ -97,7 +110,7 @@ func (u *GenericUart) write(sequenceEvent event.SequenceEvent) test.Result {
 	if err != nil {
 		return test.Result{Result: test.Error, Message: err.Error()}
 	} else {
-		return test.Result{Result: test.Done, Message: "Sent: " + sequenceEvent.Data}
+		return test.Result{Result: test.Done, Message: "Tx: " + sequenceEvent.Data}
 	}
 }
 
