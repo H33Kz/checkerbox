@@ -5,20 +5,7 @@ import (
 	"errors"
 )
 
-func HardwareConfigResolver(hardwareMap []map[string]string) ([]device.Device, []error) {
-	var InitializedDevices []device.Device
-	var errorTable []error
-
-	for _, value := range hardwareMap {
-		device, error := devicePicker(value)
-		InitializedDevices = append(InitializedDevices, device)
-		errorTable = append(errorTable, error...)
-	}
-
-	return InitializedDevices, errorTable
-}
-
-func devicePicker(deviceEntry map[string]string) (device.Device, []error) {
+func DeviceEntryResolver(deviceEntry map[string]string) (device.Device, []error) {
 	switch deviceEntry["device"] {
 	case "genericuart":
 		return device.NewGenericUart(deviceEntry)
