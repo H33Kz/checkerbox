@@ -33,6 +33,7 @@ func NewGenericUart(deviceMap map[string]string) (*GenericUart, []error) {
 	port, portError := initPort(addres, int(baudrate))
 	if portError != nil {
 		errorTable = append(errorTable, portError)
+		return nil, errorTable
 	}
 
 	return &GenericUart{
