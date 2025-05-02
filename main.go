@@ -45,11 +45,16 @@ func reloadConfiguration(ctx *applicationContext) {
 	}
 	ctx.config = loadedConfig
 
-	// Isolate configuration of devices, spawn instances and print errors that occured durning initialization
-	ctx.devices, ctx.deviceErrors = config.HardwareConfigResolver(ctx.config.GetHardwareConfig())
-	if len(ctx.deviceErrors) > 0 {
-		for _, value := range ctx.deviceErrors {
-			fmt.Println(value.Error())
+	// Init individual device based on config
+	// TODO - after UI design - send UI events based on succesful or unsuccesful initialization instead of printing
+	for _, deviceDeclaration := range ctx.config.GetHardwareConfig() {
+		initializedDevice, initDeviceErrorTable := config.DeviceEntryResolver(deviceDeclaration)
+
+		if initializedDevice != nil {
+			ctx.devices = append(ctx.devices, initializedDevice)
+		}
+		for _, errs := range initDeviceErrorTable {
+			fmt.Println(errs.Error())
 		}
 	}
 	for _, device := range ctx.devices {
