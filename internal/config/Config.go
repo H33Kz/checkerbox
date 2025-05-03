@@ -37,19 +37,16 @@ sequence:
   timeout: '3000'
   function: name
   threshold: name
-misc_settings:
-  sites: 2
-  stages: 2`
+`
 
 type Config struct {
 	path     string
 	hardware []map[string]string
 	sequence []map[string]string
-	misc     map[string]string
 }
 
 func NewConfig(path string) (*Config, error) {
-	hardware, sequence, misc, error := readConfigFile(path)
+	hardware, sequence, error := readConfigFile(path)
 	if error != nil {
 		return nil, error
 	}
@@ -57,7 +54,6 @@ func NewConfig(path string) (*Config, error) {
 		path:     path,
 		hardware: hardware,
 		sequence: sequence,
-		misc:     misc,
 	}, nil
 }
 
@@ -69,11 +65,7 @@ func (c *Config) GetSequenceConfig() []map[string]string {
 	return c.sequence
 }
 
-func (c *Config) GetMiscConfig() map[string]string {
-	return c.misc
-}
-
-func readConfigFile(path string) ([]map[string]string, []map[string]string, map[string]string, error) {
+func readConfigFile(path string) ([]map[string]string, []map[string]string, error) {
 	// Check for json or yaml match
 	jsonMatch, _ := regexp.MatchString("\\.json$", path)
 	yamlMatch, _ := regexp.MatchString("\\.(yaml|yml)", path)
@@ -84,7 +76,7 @@ func readConfigFile(path string) ([]map[string]string, []map[string]string, map[
 	if err != nil {
 		match, err2 := regexp.MatchString(".*no such file or directory.*", err.Error())
 		if err2 != nil {
-			return nil, nil, nil, err2
+			return nil, nil, err2
 		}
 		if match {
 			fmt.Println(err.Error())
@@ -92,14 +84,13 @@ func readConfigFile(path string) ([]map[string]string, []map[string]string, map[
 			data = []byte(baseYAMLConf)
 			yamlMatch = true
 		} else {
-			return nil, nil, nil, err
+			return nil, nil, err
 		}
 	}
 
 	// Variables for holding initial umarshaled config
 	var hardware []interface{}
 	var sequence []interface{}
-	var misc map[string]interface{}
 
 	// Unmarshal based on file extension or propagate error of unsupported file type
 	if jsonMatch {
@@ -108,16 +99,14 @@ func readConfigFile(path string) ([]map[string]string, []map[string]string, map[
 
 		hardware = unmarshaledJSON["hardware"].([]interface{})
 		sequence = unmarshaledJSON["sequence"].([]interface{})
-		misc = unmarshaledJSON["misc_settings"].(map[string]interface{})
 	} else if yamlMatch {
 		var unmarshaledYAML map[string]interface{}
 		yaml.Unmarshal(data, &unmarshaledYAML)
 
 		hardware = unmarshaledYAML["hardware"].([]interface{})
 		sequence = unmarshaledYAML["sequence"].([]interface{})
-		misc = unmarshaledYAML["misc_settings"].(map[string]interface{})
 	} else {
-		return nil, nil, nil, errors.New("file extension doesn't match any of supported types")
+		return nil, nil, errors.New("file extension doesn't match any of supported types")
 	}
 
 	// Remap unmarshaled config to be map of strings keyed by strings or arrays of this maps
@@ -145,14 +134,7 @@ func readConfigFile(path string) ([]map[string]string, []map[string]string, map[
 		finalSequenceMap = append(finalSequenceMap, intermediateMapNode)
 	}
 
-	finalMiscMap := make(map[string]string)
-	for key, value := range misc {
-		strKey := fmt.Sprintf("%v", key)
-		strVal := fmt.Sprintf("%v", value)
-		strKey = strings.ToLower(strKey)
-		finalMiscMap[strKey] = strVal
-	}
-	return finalHardwareMap, finalSequenceMap, finalMiscMap, nil
+	return finalHardwareMap, finalSequenceMap, nil
 }
 
 func (c *Config) PrintConfig() {
@@ -169,7 +151,4 @@ func (c *Config) PrintConfig() {
 		fmt.Println("Device: ", value["device"])
 		fmt.Println("---------------------")
 	}
-	fmt.Println("\nMisc: ")
-	fmt.Println("Sites: ", c.misc["sites"])
-	fmt.Println("Stages: ", c.misc["stages"])
 }
