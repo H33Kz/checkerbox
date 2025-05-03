@@ -2,15 +2,16 @@ package event
 
 type Event struct {
 	Type string
-	Data interface{}
+	Data any
 }
 
 type SequenceEvent struct {
 	Label      string
 	DeviceName string
 	Function   string
+	Retry      int
 	Site       int
-	Timeout    int
+	Timeout    string
 	Threshold  string
 	Data       string
 }
