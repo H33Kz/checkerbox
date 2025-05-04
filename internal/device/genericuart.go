@@ -93,25 +93,25 @@ func (u *GenericUart) read(sequenceEvent event.SequenceEvent) test.Result {
 	buff := make([]byte, 128)
 	n, err := u.port.Read(buff)
 	if err != nil {
-		return test.Result{Result: test.Error, Message: err.Error(), Site: sequenceEvent.Site}
+		return test.Result{Result: test.Error, Message: err.Error(), Site: sequenceEvent.Site, Id: sequenceEvent.Id, Label: sequenceEvent.Label}
 	}
 	readBuff := "Rx: " + string(buff[:n])
 	if sequenceEvent.Threshold == "" {
-		return test.Result{Result: test.Done, Message: readBuff, Site: sequenceEvent.Site}
+		return test.Result{Result: test.Done, Message: readBuff, Site: sequenceEvent.Site, Id: sequenceEvent.Id, Label: sequenceEvent.Label}
 	}
 	if sequenceEvent.Threshold == string(buff[:n]) {
-		return test.Result{Result: test.Pass, Message: readBuff, Site: sequenceEvent.Site}
+		return test.Result{Result: test.Pass, Message: readBuff, Site: sequenceEvent.Site, Id: sequenceEvent.Id, Label: sequenceEvent.Label}
 	} else {
-		return test.Result{Result: test.Fail, Message: readBuff, Site: sequenceEvent.Site}
+		return test.Result{Result: test.Fail, Message: readBuff, Site: sequenceEvent.Site, Id: sequenceEvent.Id, Label: sequenceEvent.Label}
 	}
 }
 
 func (u *GenericUart) write(sequenceEvent event.SequenceEvent) test.Result {
 	_, err := u.port.Write([]byte(sequenceEvent.Data))
 	if err != nil {
-		return test.Result{Result: test.Error, Message: err.Error(), Site: sequenceEvent.Site}
+		return test.Result{Result: test.Error, Message: err.Error(), Site: sequenceEvent.Site, Id: sequenceEvent.Id, Label: sequenceEvent.Label}
 	} else {
-		return test.Result{Result: test.Done, Message: "Tx: " + sequenceEvent.Data, Site: sequenceEvent.Site}
+		return test.Result{Result: test.Done, Message: "Tx: " + sequenceEvent.Data, Site: sequenceEvent.Site, Id: sequenceEvent.Id, Label: sequenceEvent.Label}
 	}
 }
 

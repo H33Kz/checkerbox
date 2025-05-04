@@ -15,6 +15,8 @@ func (rt ResultType) String() string {
 
 type Result struct {
 	Site    int
+	Id      uint
+	Label   string
 	Result  ResultType
 	Message string
 }
