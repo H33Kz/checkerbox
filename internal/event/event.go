@@ -1,8 +1,13 @@
 package event
 
+import (
+	"checkerbox/internal/test"
+)
+
 type Event struct {
-	Type string
-	Data any
+	Type          string
+	ReturnChannel chan test.Result
+	Data          any
 }
 
 type SequenceEvent struct {
@@ -15,6 +20,10 @@ type SequenceEvent struct {
 	Timeout    string
 	Threshold  string
 	Data       string
+}
+
+type ResultEvent struct {
+	Result test.Result
 }
 
 type EventBus struct {

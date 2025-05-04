@@ -9,10 +9,12 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"sync"
 	"time"
 )
 
 type applicationContext struct {
+	ctxMutex           sync.Mutex
 	noError            bool
 	appSettings        *config.AppSettings
 	config             *config.Config
@@ -30,39 +32,33 @@ func main() {
 	loadAppSettings(&ctx)
 
 	reloadConfiguration(&ctx)
-	// ctx.eventBus.Publish(event.Event{
-	// 	Type: "SequenceEvent",
-	// 	Data: event.SequenceEvent{
-	// 		DeviceName: "genericuart",
-	// 		Site:       1,
-	// 		Function:   "Send-Receive",
-	// 		Data:       "Test",
-	// 		Threshold:  "Test",
-	// 	},
-	// })
-	//
-	// result := <-ctx.resultChannel
-	// fmt.Println(result)
-	for _, sequenceEventList := range ctx.sequenceEventLists {
-		fmt.Println(sequenceEventList)
-		go handleSequence(sequenceEventList, &ctx)
+
+	for i, sequenceEventList := range ctx.sequenceEventLists {
+		// fmt.Println(sequenceEventList)
+		fmt.Println(i)
+		go handleSequence(sequenceEventList, &ctx, i)
 	}
 
 	time.Sleep(time.Second * 3)
-	for _, sequenceEventList := range ctx.sequenceEventLists {
-		fmt.Println(sequenceEventList)
-	}
+	// for _, sequenceEventList := range ctx.sequenceEventLists {
+	// 	fmt.Println(sequenceEventList)
+	// }
 }
 
-func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicationContext) {
+func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicationContext, siteId int) {
+	siteResultChannel := make(chan test.Result)
 	for range sequenceEventsList.Len() {
 		singleSequenceEvent := sequenceEventsList.Dequeue()
+		singleSequenceEvent.ReturnChannel = siteResultChannel
 		var result test.Result
 		for range singleSequenceEvent.Data.(event.SequenceEvent).Retry {
+			ctx.ctxMutex.Lock()
 			ctx.eventBus.Publish(singleSequenceEvent)
-			result = <-ctx.resultChannel
+			ctx.ctxMutex.Unlock()
+
+			result = <-siteResultChannel
 			fmt.Println(result)
-			if result.Result == test.Pass || result.Result == test.Error {
+			if result.Result == test.Pass || result.Result == test.Error || result.Result == test.Done {
 				break
 			}
 		}
