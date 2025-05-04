@@ -6,6 +6,7 @@ type Event struct {
 }
 
 type SequenceEvent struct {
+	Id         uint
 	Label      string
 	DeviceName string
 	Function   string
