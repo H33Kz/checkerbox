@@ -20,14 +20,16 @@ func NewSequenceDevice(site int) *SequenceDevice {
 	}
 }
 
-func (s *SequenceDevice) SequenceEventHandler(resultChannel chan test.Result) {
+func (s *SequenceDevice) SequenceEventHandler() {
 	for receivedEvent := range s.eventChannel {
 		sequenceEvent, ok := receivedEvent.Data.(event.SequenceEvent)
 		if !ok || sequenceEvent.DeviceName != "sequence" || sequenceEvent.Site != s.site {
 			continue
 		}
 
-		resultChannel <- s.functionResolver(sequenceEvent)
+		siteResultChannel := receivedEvent.ReturnChannel
+		result := s.functionResolver(sequenceEvent)
+		siteResultChannel <- result
 	}
 }
 

@@ -26,7 +26,7 @@ func NewTestDevice(deviceMap map[string]string) (*TestDevice, []error) {
 	}, errorTable
 }
 
-func (t *TestDevice) SequenceEventHandler(resultChannel chan test.Result) {
+func (t *TestDevice) SequenceEventHandler() {
 	for receivedEvent := range t.eventChannel {
 		sequenceEvent, ok := receivedEvent.Data.(event.SequenceEvent)
 		if !ok || sequenceEvent.DeviceName != "testdevice" || sequenceEvent.Site != t.site {
@@ -34,9 +34,7 @@ func (t *TestDevice) SequenceEventHandler(resultChannel chan test.Result) {
 		}
 
 		siteResultChannel := receivedEvent.ReturnChannel
-
 		result := t.functionResolver(sequenceEvent)
-		// resultChannel <- result
 		siteResultChannel <- result
 	}
 }

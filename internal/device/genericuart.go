@@ -55,14 +55,15 @@ func initPort(addres string, baudrate int) (serial.Port, error) {
 	return port, error
 }
 
-func (u *GenericUart) SequenceEventHandler(resultChannel chan test.Result) {
+func (u *GenericUart) SequenceEventHandler() {
 	for receivedEvent := range u.eventChannel {
 		sequenceEvent, ok := receivedEvent.Data.(event.SequenceEvent)
 		if !ok || sequenceEvent.DeviceName != "genericuart" || sequenceEvent.Site != u.site {
 			continue
 		}
-
-		resultChannel <- u.functionResolver(sequenceEvent)
+		siteResultChannel := receivedEvent.ReturnChannel
+		result := u.functionResolver(sequenceEvent)
+		siteResultChannel <- result
 	}
 }
 
