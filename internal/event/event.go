@@ -2,6 +2,7 @@ package event
 
 import (
 	"checkerbox/internal/test"
+	"sync"
 )
 
 type Event struct {
@@ -27,6 +28,7 @@ type ResultEvent struct {
 }
 
 type EventBus struct {
+	mutex       sync.Mutex
 	subscribers map[string][]chan<- Event
 }
 
@@ -37,10 +39,14 @@ func NewEventBus() *EventBus {
 }
 
 func (eBus *EventBus) Subscribe(eventType string, eventChan chan<- Event) {
+	eBus.mutex.Lock()
+	defer eBus.mutex.Unlock()
 	eBus.subscribers[eventType] = append(eBus.subscribers[eventType], eventChan)
 }
 
 func (eBus *EventBus) Publish(event Event) {
+	eBus.mutex.Lock()
+	defer eBus.mutex.Unlock()
 	for _, subscriber := range eBus.subscribers[event.Type] {
 		subscriber <- event
 	}
