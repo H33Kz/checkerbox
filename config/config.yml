@@ -1,29 +1,42 @@
 ---
 hardware:
-- site: '1'
+- site: '0'
   device: genericuart
-  address: ttyUSB0
+  address: /dev/ttyUSB0
   baudrate: '9600'
-- site: '2'
-  device: modbus
-  address: COM6
-  baudrate: '4800'
-- site: '2'
-  device: genericuart
-  address: COM7
+#TODO Stage separating
 sequence:
-- step_label: STAGE1
-- step_label: Do something
-  device: name
+- step_label: Send test command
+  retry: '3'
+  device: genericuart
   timeout: '1000'
-  function: name
-  threshold: name
-- step_label: STAGE2
-- step_label: Do other thing
-  device: name
-  timeout: '3000'
-  function: name
-  threshold: name
-misc_settings:
-  sites: 2
-  stages: 2
+  function: Send-Receive
+  data: test
+  threshold: test
+- step_label: Send test command2
+  retry: '3'
+  device: genericuart
+  timeout: '1000'
+  function: Send-Receive
+  data: test1
+  threshold: test1
+- step_label: Wait 1000ms
+  device: sequence
+  timeout: '1000'
+  function: Wait
+  data: '1000'
+  threshold: test1
+- step_label: Send test command3
+  retry: '5'
+  device: genericuart
+  timeout: '1000'
+  function: Send-Receive
+  data: test3
+  threshold: test
+- step_label: Send test command4
+  retry: '3'
+  device: genericuart
+  timeout: '1000'
+  function: Send-Receive
+  data: test
+  threshold: test
