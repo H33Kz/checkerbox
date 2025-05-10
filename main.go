@@ -5,6 +5,7 @@ import (
 	"checkerbox/internal/device"
 	"checkerbox/internal/event"
 	"checkerbox/internal/test"
+	"checkerbox/internal/userinterface"
 	"checkerbox/internal/util"
 	"fmt"
 	"log"
@@ -20,9 +21,9 @@ type applicationContext struct {
 	config             *config.Config
 	devices            []device.Device
 	sequenceEventLists map[int]*util.Queue[event.Event]
-	resultChannel      chan test.Result
 	eventBus           *event.EventBus
 	deviceErrors       []error
+	graphicInterface   userinterface.GraphicInterface
 }
 
 func main() {
@@ -34,12 +35,11 @@ func main() {
 	reloadConfiguration(&ctx)
 
 	for i, sequenceEventList := range ctx.sequenceEventLists {
-		// fmt.Println(sequenceEventList)
-		fmt.Println(i)
 		go handleSequence(sequenceEventList, &ctx, i)
 	}
 
 	time.Sleep(time.Second * 3)
+
 	// for _, sequenceEventList := range ctx.sequenceEventLists {
 	// 	fmt.Println(sequenceEventList)
 	// }
@@ -57,6 +57,14 @@ func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicatio
 			ctx.ctxMutex.Unlock()
 
 			result = <-siteResultChannel
+			ctx.ctxMutex.Lock()
+			ctx.eventBus.Publish(event.Event{
+				Type: "graphicEvent",
+				Data: event.GraphicEvent{
+					Result: result,
+				},
+			})
+			ctx.ctxMutex.Unlock()
 			fmt.Println(result)
 			if result.Result == test.Pass || result.Result == test.Error || result.Result == test.Done {
 				break
@@ -74,6 +82,12 @@ func loadAppSettings(ctx *applicationContext) {
 	ctx.appSettings = config.NewAppSettings()
 	ctx.sequenceEventLists = make(map[int]*util.Queue[event.Event])
 	ctx.eventBus = event.NewEventBus()
+	ctx.graphicInterface = config.GraphicalInterfaceResolver(*ctx.appSettings)
+
+	if ctx.graphicInterface != nil {
+		ctx.eventBus.Subscribe("graphicEvent", ctx.graphicInterface.GetEventChannel())
+		go ctx.graphicInterface.GraphicEventHandler()
+	}
 }
 
 func reloadConfiguration(ctx *applicationContext) {
@@ -114,6 +128,7 @@ func reloadConfiguration(ctx *applicationContext) {
 	}
 	// Init individual device based on config
 	// TODO - after UI design - send UI events based on succesful or unsuccesful initialization instead of printing
+	// TODO - add check if device initialized are out of site number spec
 	for _, deviceDeclaration := range ctx.config.GetHardwareConfig() {
 		initializedDevice, initDeviceErrorTable := config.DeviceEntryResolver(deviceDeclaration)
 
@@ -130,13 +145,12 @@ func reloadConfiguration(ctx *applicationContext) {
 
 	// Instantiate variables regarding event structure
 	// Create event bus and subsribe device modules to events of type "SequenceEvent"
-	ctx.resultChannel = make(chan test.Result)
 	for _, device := range ctx.devices {
 		ctx.eventBus.Subscribe("SequenceEvent", device.GetEventChannel())
 	}
 
 	// Start goroutines from device modules that handle events sent
 	for _, device := range ctx.devices {
-		go device.SequenceEventHandler(ctx.resultChannel)
+		go device.SequenceEventHandler()
 	}
 }
