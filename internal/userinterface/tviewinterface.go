@@ -46,6 +46,11 @@ func (t *TviewInterface) GraphicEventHandler() {
 				continue
 			}
 
+			if graphicEvent.Type == "QUIT" {
+				fmt.Println("UI quit")
+				t.application.Stop()
+			}
+
 			t.resultLists[graphicEvent.Result.Site] = append(t.resultLists[graphicEvent.Result.Site], graphicEvent.Result)
 			t.refreshSites(siteBoxes)
 		}
