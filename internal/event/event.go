@@ -23,7 +23,7 @@ type SequenceEvent struct {
 	Data       string
 }
 
-type ResultEvent struct {
+type GraphicEvent struct {
 	Result test.Result
 }
 
