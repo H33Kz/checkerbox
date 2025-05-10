@@ -24,6 +24,7 @@ type SequenceEvent struct {
 }
 
 type GraphicEvent struct {
+	Type   string
 	Result test.Result
 }
 
