@@ -2,6 +2,7 @@ package config
 
 import (
 	"checkerbox/internal/device"
+	"checkerbox/internal/userinterface"
 	"errors"
 )
 
@@ -16,5 +17,14 @@ func DeviceEntryResolver(deviceEntry map[string]string) (device.Device, []error)
 		errorTable = append(errorTable, errors.New("Specified device not supported: "+deviceEntry["device"]))
 		return nil, errorTable
 
+	}
+}
+
+func GraphicalInterfaceResolver(settingsNode AppSettings) userinterface.GraphicInterface {
+	switch settingsNode.Uiengine {
+	case "tview":
+		return userinterface.NewTviewInterace(settingsNode.Sites)
+	default:
+		return nil
 	}
 }
