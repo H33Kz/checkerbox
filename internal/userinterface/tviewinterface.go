@@ -68,9 +68,6 @@ func (t *TviewInterface) GraphicEventHandler() {
 				})
 			case "testResult":
 				app.QueueUpdateDraw(func() {
-					if graphicEvent.Result.Result == test.Fail || graphicEvent.Result.Result == test.Error {
-						siteBoxes[graphicEvent.Result.Site].SetTextColor(tcell.ColorRed)
-					}
 					resultLists[graphicEvent.Result.Site][len(resultLists[graphicEvent.Result.Site])-1] = graphicEvent.Result
 					siteBoxes[graphicEvent.Result.Site].Clear()
 					for _, result := range resultLists[graphicEvent.Result.Site] {
@@ -81,6 +78,15 @@ func (t *TviewInterface) GraphicEventHandler() {
 						}
 					}
 				})
+			case "testEnd":
+				app.QueueUpdateDraw(func() {
+					if graphicEvent.Result.Result == test.Pass {
+						siteBoxes[graphicEvent.Result.Site].SetTextColor(tcell.ColorGreen)
+					} else {
+						siteBoxes[graphicEvent.Result.Site].SetTextColor(tcell.ColorRed)
+					}
+				})
+
 			default:
 				continue
 			}
