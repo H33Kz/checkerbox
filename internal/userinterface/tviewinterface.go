@@ -52,7 +52,15 @@ func (t *TviewInterface) GraphicEventHandler() {
 				app.Stop()
 			case "testStarted":
 				app.QueueUpdateDraw(func() {
-					resultLists[graphicEvent.Result.Site] = append(resultLists[graphicEvent.Result.Site], graphicEvent.Result)
+					if len(resultLists[graphicEvent.Result.Site]) > 0 {
+						if resultLists[graphicEvent.Result.Site][len(resultLists[graphicEvent.Result.Site])-1].Id == graphicEvent.Result.Id {
+							resultLists[graphicEvent.Result.Site][len(resultLists[graphicEvent.Result.Site])-1] = graphicEvent.Result
+						} else {
+							resultLists[graphicEvent.Result.Site] = append(resultLists[graphicEvent.Result.Site], graphicEvent.Result)
+						}
+					} else {
+						resultLists[graphicEvent.Result.Site] = append(resultLists[graphicEvent.Result.Site], graphicEvent.Result)
+					}
 					siteBoxes[graphicEvent.Result.Site].Clear()
 					for _, result := range resultLists[graphicEvent.Result.Site] {
 						fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v \n", result.Id, result.Result, result.Label, result.Message)
@@ -60,13 +68,17 @@ func (t *TviewInterface) GraphicEventHandler() {
 				})
 			case "testResult":
 				app.QueueUpdateDraw(func() {
-					if graphicEvent.Result.Result == test.Fail {
+					if graphicEvent.Result.Result == test.Fail || graphicEvent.Result.Result == test.Error {
 						siteBoxes[graphicEvent.Result.Site].SetTextColor(tcell.ColorRed)
 					}
 					resultLists[graphicEvent.Result.Site][len(resultLists[graphicEvent.Result.Site])-1] = graphicEvent.Result
 					siteBoxes[graphicEvent.Result.Site].Clear()
 					for _, result := range resultLists[graphicEvent.Result.Site] {
-						fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v \n", result.Id, result.Result, result.Label, result.Message)
+						if result.Retried > 0 {
+							fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v (%v) \n", result.Id, result.Result, result.Label, result.Message, result.Retried+1)
+						} else {
+							fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v \n", result.Id, result.Result, result.Label, result.Message)
+						}
 					}
 				})
 			default:
