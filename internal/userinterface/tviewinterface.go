@@ -5,21 +5,19 @@ import (
 	"checkerbox/internal/test"
 	"fmt"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
 type TviewInterface struct {
 	eventChannel chan event.Event
-	application  tview.Application
 	sites        int
-	resultLists  map[int][]test.Result
 }
 
 func NewTviewInterace(sites int) *TviewInterface {
 	return &TviewInterface{
 		eventChannel: make(chan event.Event),
 		sites:        sites,
-		resultLists:  make(map[int][]test.Result),
 	}
 }
 
@@ -28,14 +26,17 @@ func (t *TviewInterface) GetEventChannel() chan event.Event {
 }
 
 func (t *TviewInterface) GraphicEventHandler() {
+	resultLists := make(map[int][]test.Result)
+
+	app := tview.NewApplication()
 	mainBox := tview.NewFlex()
-	var siteBoxes []tview.TextView
+	siteBoxes := make(map[int]*tview.TextView)
 	for i := range t.sites {
-		siteBoxes = append(siteBoxes, *tview.NewTextView())
+		siteBoxes[i] = tview.NewTextView().SetDynamicColors(true).SetWordWrap(true)
 		siteBoxes[i].SetBorder(true).SetTitle("Site" + fmt.Sprintf("%v", i))
 	}
-	for i := range t.sites {
-		mainBox.AddItem(&siteBoxes[i], 0, 1, false)
+	for i := range siteBoxes {
+		mainBox.AddItem(siteBoxes[i], 0, 1, false)
 	}
 	mainBox.SetBorder(true).SetTitle("checkerbox")
 
@@ -46,26 +47,35 @@ func (t *TviewInterface) GraphicEventHandler() {
 				continue
 			}
 
-			if graphicEvent.Type == "QUIT" {
-				fmt.Println("UI quit")
-				t.application.Stop()
+			switch graphicEvent.Type {
+			case "QUIT":
+				app.Stop()
+			case "testStarted":
+				app.QueueUpdateDraw(func() {
+					resultLists[graphicEvent.Result.Site] = append(resultLists[graphicEvent.Result.Site], graphicEvent.Result)
+					siteBoxes[graphicEvent.Result.Site].Clear()
+					for _, result := range resultLists[graphicEvent.Result.Site] {
+						fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v \n", result.Id, result.Result, result.Label, result.Message)
+					}
+				})
+			case "testResult":
+				app.QueueUpdateDraw(func() {
+					if graphicEvent.Result.Result == test.Fail {
+						siteBoxes[graphicEvent.Result.Site].SetTextColor(tcell.ColorRed)
+					}
+					resultLists[graphicEvent.Result.Site][len(resultLists[graphicEvent.Result.Site])-1] = graphicEvent.Result
+					siteBoxes[graphicEvent.Result.Site].Clear()
+					for _, result := range resultLists[graphicEvent.Result.Site] {
+						fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v \n", result.Id, result.Result, result.Label, result.Message)
+					}
+				})
+			default:
+				continue
 			}
-
-			t.resultLists[graphicEvent.Result.Site] = append(t.resultLists[graphicEvent.Result.Site], graphicEvent.Result)
-			t.refreshSites(siteBoxes)
 		}
 	}()
 
-	if err := t.application.SetRoot(mainBox, true).Run(); err != nil {
+	if err := app.SetRoot(mainBox, true).Run(); err != nil {
 		panic(err)
-	}
-}
-
-func (t *TviewInterface) refreshSites(siteBoxes []tview.TextView) {
-	for idx := range siteBoxes {
-		siteBoxes[idx].Clear()
-		for _, result := range t.resultLists[idx] {
-			fmt.Fprintf(&siteBoxes[idx], "%v: %v \n", result.Label, result.Message)
-		}
 	}
 }
