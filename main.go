@@ -7,7 +7,6 @@ import (
 	"checkerbox/internal/test"
 	"checkerbox/internal/userinterface"
 	"checkerbox/internal/util"
-	"fmt"
 	"log"
 	"strconv"
 	"sync"
@@ -38,11 +37,18 @@ func main() {
 		go handleSequence(sequenceEventList, &ctx, i)
 	}
 
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 6)
 
-	// for _, sequenceEventList := range ctx.sequenceEventLists {
-	// 	fmt.Println(sequenceEventList)
-	// }
+	ctx.ctxMutex.Lock()
+	ctx.eventBus.Publish(event.Event{
+		Type: "graphicEvent",
+		Data: event.GraphicEvent{
+			Type: "QUIT",
+		},
+	})
+	ctx.ctxMutex.Unlock()
+
+	time.Sleep(time.Second * 1)
 }
 
 func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicationContext, siteId int) {
@@ -52,20 +58,37 @@ func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicatio
 		singleSequenceEvent.ReturnChannel = siteResultChannel
 		var result test.Result
 		for range singleSequenceEvent.Data.(event.SequenceEvent).Retry {
+
 			ctx.ctxMutex.Lock()
 			ctx.eventBus.Publish(singleSequenceEvent)
+			sequenceEventForUI := singleSequenceEvent.Data.(event.SequenceEvent)
+			ctx.eventBus.Publish(event.Event{
+				Type: "graphicEvent",
+				Data: event.GraphicEvent{
+					Type: "testStarted",
+					Result: test.Result{
+						Site:    sequenceEventForUI.Site,
+						Id:      sequenceEventForUI.Id,
+						Label:   sequenceEventForUI.Label,
+						Message: "...",
+						Result:  test.InProgress,
+					},
+				},
+			})
 			ctx.ctxMutex.Unlock()
 
 			result = <-siteResultChannel
+
 			ctx.ctxMutex.Lock()
 			ctx.eventBus.Publish(event.Event{
 				Type: "graphicEvent",
 				Data: event.GraphicEvent{
+					Type:   "testResult",
 					Result: result,
 				},
 			})
 			ctx.ctxMutex.Unlock()
-			fmt.Println(result)
+			// fmt.Println(result)
 			if result.Result == test.Pass || result.Result == test.Error || result.Result == test.Done {
 				break
 			}
@@ -135,13 +158,13 @@ func reloadConfiguration(ctx *applicationContext) {
 		if initializedDevice != nil {
 			ctx.devices = append(ctx.devices, initializedDevice)
 		}
-		for _, errs := range initDeviceErrorTable {
-			fmt.Println(errs.Error())
+		for range initDeviceErrorTable {
+			// fmt.Println(errs.Error())
 		}
 	}
-	for _, device := range ctx.devices {
-		device.Print()
-	}
+	// for _, device := range ctx.devices {
+	// 	device.Print()
+	// }
 
 	// Instantiate variables regarding event structure
 	// Create event bus and subsribe device modules to events of type "SequenceEvent"
