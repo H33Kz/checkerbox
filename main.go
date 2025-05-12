@@ -37,7 +37,7 @@ func main() {
 		go handleSequence(sequenceEventList, &ctx, i)
 	}
 
-	time.Sleep(time.Second * 6)
+	time.Sleep(time.Second * 15)
 
 	ctx.ctxMutex.Lock()
 	ctx.eventBus.Publish(event.Event{
@@ -57,7 +57,7 @@ func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicatio
 		singleSequenceEvent := sequenceEventsList.Dequeue()
 		singleSequenceEvent.ReturnChannel = siteResultChannel
 		var result test.Result
-		for range singleSequenceEvent.Data.(event.SequenceEvent).Retry {
+		for retried := range singleSequenceEvent.Data.(event.SequenceEvent).Retry {
 
 			ctx.ctxMutex.Lock()
 			ctx.eventBus.Publish(singleSequenceEvent)
@@ -78,6 +78,7 @@ func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicatio
 			ctx.ctxMutex.Unlock()
 
 			result = <-siteResultChannel
+			result.Retried = retried
 
 			ctx.ctxMutex.Lock()
 			ctx.eventBus.Publish(event.Event{
@@ -95,9 +96,33 @@ func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicatio
 		}
 		if (result.Result == test.Fail || result.Result == test.Error) && !ctx.noError {
 			sequenceEventsList.Flush()
+			ctx.ctxMutex.Lock()
+			ctx.eventBus.Publish(event.Event{
+				Type: "graphicEvent",
+				Data: event.GraphicEvent{
+					Type: "testEnd",
+					Result: test.Result{
+						Result: test.Fail,
+						Site:   siteId,
+					},
+				},
+			})
+			ctx.ctxMutex.Unlock()
 			break
 		}
 	}
+	ctx.ctxMutex.Lock()
+	ctx.eventBus.Publish(event.Event{
+		Type: "graphicEvent",
+		Data: event.GraphicEvent{
+			Type: "testEnd",
+			Result: test.Result{
+				Result: test.Pass,
+				Site:   siteId,
+			},
+		},
+	})
+	ctx.ctxMutex.Unlock()
 }
 
 func loadAppSettings(ctx *applicationContext) {
