@@ -7,10 +7,11 @@ const (
 	Pass
 	Done
 	Error
+	InProgress
 )
 
 func (rt ResultType) String() string {
-	return [...]string{"Fail", "Pass", "Done", "Error"}[rt]
+	return [...]string{"Fail", "Pass", "Done", "Error", "InProgress"}[rt]
 }
 
 type Result struct {
