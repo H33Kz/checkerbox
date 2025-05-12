@@ -20,4 +20,5 @@ type Result struct {
 	Label   string
 	Result  ResultType
 	Message string
+	Retried int
 }
