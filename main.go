@@ -8,7 +8,6 @@ import (
 	"checkerbox/internal/userinterface"
 	"checkerbox/internal/util"
 	"log"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -31,7 +30,7 @@ func main() {
 
 	loadAppSettings(&ctx)
 
-	reloadConfiguration(&ctx)
+	reloadConfiguration(&ctx, "config/config.yml")
 
 	for i, sequenceEventList := range ctx.sequenceEventLists {
 		go handleSequence(sequenceEventList, &ctx, i)
@@ -53,6 +52,7 @@ func main() {
 
 func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicationContext, siteId int) {
 	siteResultChannel := make(chan test.Result)
+	sequenceFailed := false
 	for range sequenceEventsList.Len() {
 		singleSequenceEvent := sequenceEventsList.Dequeue()
 		singleSequenceEvent.ReturnChannel = siteResultChannel
@@ -95,6 +95,7 @@ func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicatio
 			}
 		}
 		if (result.Result == test.Fail || result.Result == test.Error) && !ctx.noError {
+			sequenceFailed = true
 			sequenceEventsList.Flush()
 			ctx.ctxMutex.Lock()
 			ctx.eventBus.Publish(event.Event{
@@ -111,18 +112,20 @@ func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicatio
 			break
 		}
 	}
-	ctx.ctxMutex.Lock()
-	ctx.eventBus.Publish(event.Event{
-		Type: "graphicEvent",
-		Data: event.GraphicEvent{
-			Type: "testEnd",
-			Result: test.Result{
-				Result: test.Pass,
-				Site:   siteId,
+	if !sequenceFailed {
+		ctx.ctxMutex.Lock()
+		ctx.eventBus.Publish(event.Event{
+			Type: "graphicEvent",
+			Data: event.GraphicEvent{
+				Type: "testEnd",
+				Result: test.Result{
+					Result: test.Pass,
+					Site:   siteId,
+				},
 			},
-		},
-	})
-	ctx.ctxMutex.Unlock()
+		})
+		ctx.ctxMutex.Unlock()
+	}
 }
 
 func loadAppSettings(ctx *applicationContext) {
@@ -138,9 +141,13 @@ func loadAppSettings(ctx *applicationContext) {
 	}
 }
 
-func reloadConfiguration(ctx *applicationContext) {
+func reloadConfiguration(ctx *applicationContext, path string) {
 	// Load specified config file
-	loadedConfig, err := config.NewConfig("config/config.yml")
+	// loadedConfig, err := config.NewConfig("config/config.yml")
+	// if err != nil {
+	// 	log.Fatal(err.Error())
+	// }
+	loadedConfig, err := config.NewConfig(path)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -150,22 +157,15 @@ func reloadConfiguration(ctx *applicationContext) {
 	for i := 0; i <= ctx.appSettings.Sites-1; i++ {
 		ctx.sequenceEventLists[i] = util.NewQueue[event.Event]()
 		for n, sequenceConfigNode := range ctx.config.GetSequenceConfig() {
-			retries, err := strconv.ParseInt(sequenceConfigNode["retry"], 10, 32)
-			if err != nil || retries == 0 {
-				retries = 1
-			}
 			ctx.sequenceEventLists[i].Enqueue(event.Event{
 				Type: "SequenceEvent",
 				Data: event.SequenceEvent{
-					Id:         uint(n),
-					Label:      sequenceConfigNode["step_label"],
-					Site:       i,
-					Retry:      int(retries),
-					DeviceName: sequenceConfigNode["device"],
-					Function:   sequenceConfigNode["function"],
-					Data:       sequenceConfigNode["data"],
-					Threshold:  sequenceConfigNode["threshold"],
-					Timeout:    sequenceConfigNode["timeout"],
+					Id:           uint(n),
+					Label:        sequenceConfigNode.StepLabel,
+					Site:         i,
+					Retry:        sequenceConfigNode.Retry,
+					DeviceName:   sequenceConfigNode.Device,
+					StepSettings: sequenceConfigNode.StepSettings,
 				},
 			})
 		}
