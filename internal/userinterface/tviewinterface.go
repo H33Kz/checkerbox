@@ -57,14 +57,22 @@ func (t *TviewInterface) GraphicEventHandler() {
 							resultLists[graphicEvent.Result.Site][len(resultLists[graphicEvent.Result.Site])-1] = graphicEvent.Result
 						} else {
 							resultLists[graphicEvent.Result.Site] = append(resultLists[graphicEvent.Result.Site], graphicEvent.Result)
+							siteBoxes[graphicEvent.Result.Site].Clear()
+							for _, result := range resultLists[graphicEvent.Result.Site] {
+								fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v \n", result.Id, result.Result, result.Label, result.Message)
+							}
 						}
 					} else {
 						resultLists[graphicEvent.Result.Site] = append(resultLists[graphicEvent.Result.Site], graphicEvent.Result)
+						siteBoxes[graphicEvent.Result.Site].Clear()
+						for _, result := range resultLists[graphicEvent.Result.Site] {
+							fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v \n", result.Id, result.Result, result.Label, result.Message)
+						}
 					}
-					siteBoxes[graphicEvent.Result.Site].Clear()
-					for _, result := range resultLists[graphicEvent.Result.Site] {
-						fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v \n", result.Id, result.Result, result.Label, result.Message)
-					}
+					// siteBoxes[graphicEvent.Result.Site].Clear()
+					// for _, result := range resultLists[graphicEvent.Result.Site] {
+					// 	fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v \n", result.Id, result.Result, result.Label, result.Message)
+					// }
 				})
 			case "testResult":
 				app.QueueUpdateDraw(func() {
