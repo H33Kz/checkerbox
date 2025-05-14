@@ -3,9 +3,7 @@ package device
 import (
 	"checkerbox/internal/event"
 	"checkerbox/internal/test"
-	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"go.bug.st/serial"
@@ -17,30 +15,17 @@ type GenericUart struct {
 	port         serial.Port
 }
 
-func NewGenericUart(deviceMap map[string]string) (*GenericUart, []error) {
-	var errorTable []error
-	site, siteError := strconv.ParseInt(deviceMap["site"], 10, 8)
-	if siteError != nil {
-		errorTable = append(errorTable, errors.New("Unable to parse site name for: "+deviceMap["device"]+"\nSetting of site 1"))
-		site = 1
-	}
-	addres := deviceMap["address"]
-	baudrate, baudError := strconv.ParseInt(deviceMap["baudrate"], 10, 32)
-	if baudError != nil {
-		errorTable = append(errorTable, errors.New("Unable to parse baudrate for: "+deviceMap["device"]+"\nSetting default of: 115200"))
-		baudrate = 115200
-	}
-	port, portError := initPort(addres, int(baudrate))
+func NewGenericUart(site int, address string, baudrate int) (*GenericUart, error) {
+	port, portError := initPort(address, baudrate)
 	if portError != nil {
-		errorTable = append(errorTable, portError)
-		return nil, errorTable
+		return nil, portError
 	}
 
 	return &GenericUart{
-		site:         int(site),
+		site:         site,
 		port:         port,
 		eventChannel: make(chan event.Event),
-	}, errorTable
+	}, nil
 }
 
 func (u *GenericUart) GetEventChannel() chan event.Event {
@@ -63,56 +48,64 @@ func (u *GenericUart) SequenceEventHandler() {
 		}
 		siteResultChannel := receivedEvent.ReturnChannel
 		result := u.functionResolver(sequenceEvent)
+		result.Site = sequenceEvent.Site
+		result.Id = sequenceEvent.Id
+		result.Label = sequenceEvent.Label
 		siteResultChannel <- result
 	}
 }
 
 func (u *GenericUart) functionResolver(sequenceEvent event.SequenceEvent) test.Result {
-	switch sequenceEvent.Function {
+	function, ok := sequenceEvent.StepSettings["function"].(string)
+	if !ok {
+		return test.Result{Result: test.Error, Message: "Error parsing function name"}
+	}
+
+	switch function {
 	case "Read":
-		return u.read(sequenceEvent)
+		return u.read(sequenceEvent.StepSettings["threshold"].(string))
 	case "Write":
-		return u.write(sequenceEvent)
+		return u.write(sequenceEvent.StepSettings["data"].(string))
 	case "Send-Receive":
-		return u.sendReceive(sequenceEvent)
+		return u.sendReceive(sequenceEvent.StepSettings["data"].(string), sequenceEvent.StepSettings["threshold"].(string))
 	default:
 		return test.Result{Result: test.Error, Message: "Function not found: " + sequenceEvent.Label, Site: sequenceEvent.Site}
 	}
 }
 
-func (u *GenericUart) sendReceive(sequenceEvent event.SequenceEvent) test.Result {
-	writeResult := u.write(sequenceEvent)
+func (u *GenericUart) sendReceive(data, threshold string) test.Result {
+	writeResult := u.write(data)
 	if writeResult.Result == test.Error {
 		return writeResult
 	} else {
 		time.Sleep(time.Millisecond * 20)
-		return u.read(sequenceEvent)
+		return u.read(threshold)
 	}
 }
 
-func (u *GenericUart) read(sequenceEvent event.SequenceEvent) test.Result {
+func (u *GenericUart) read(threshold string) test.Result {
 	buff := make([]byte, 128)
 	n, err := u.port.Read(buff)
 	if err != nil {
-		return test.Result{Result: test.Error, Message: err.Error(), Site: sequenceEvent.Site, Id: sequenceEvent.Id, Label: sequenceEvent.Label}
+		return test.Result{Result: test.Error, Message: err.Error()}
 	}
 	readBuff := "Rx: " + string(buff[:n])
-	if sequenceEvent.Threshold == "" {
-		return test.Result{Result: test.Done, Message: readBuff, Site: sequenceEvent.Site, Id: sequenceEvent.Id, Label: sequenceEvent.Label}
+	if threshold == "" {
+		return test.Result{Result: test.Done, Message: readBuff}
 	}
-	if sequenceEvent.Threshold == string(buff[:n]) {
-		return test.Result{Result: test.Pass, Message: readBuff, Site: sequenceEvent.Site, Id: sequenceEvent.Id, Label: sequenceEvent.Label}
+	if threshold == string(buff[:n]) {
+		return test.Result{Result: test.Pass, Message: readBuff}
 	} else {
-		return test.Result{Result: test.Fail, Message: readBuff, Site: sequenceEvent.Site, Id: sequenceEvent.Id, Label: sequenceEvent.Label}
+		return test.Result{Result: test.Fail, Message: readBuff}
 	}
 }
 
-func (u *GenericUart) write(sequenceEvent event.SequenceEvent) test.Result {
-	_, err := u.port.Write([]byte(sequenceEvent.Data))
+func (u *GenericUart) write(data string) test.Result {
+	_, err := u.port.Write([]byte(data))
 	if err != nil {
-		return test.Result{Result: test.Error, Message: err.Error(), Site: sequenceEvent.Site, Id: sequenceEvent.Id, Label: sequenceEvent.Label}
+		return test.Result{Result: test.Error, Message: err.Error()}
 	} else {
-		return test.Result{Result: test.Done, Message: "Tx: " + sequenceEvent.Data, Site: sequenceEvent.Site, Id: sequenceEvent.Id, Label: sequenceEvent.Label}
+		return test.Result{Result: test.Done, Message: "Tx: " + data}
 	}
 }
 
