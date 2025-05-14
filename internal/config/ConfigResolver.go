@@ -6,15 +6,36 @@ import (
 	"errors"
 )
 
-func DeviceEntryResolver(deviceEntry map[string]string) (device.Device, []error) {
-	switch deviceEntry["device"] {
+func DeviceEntryResolver(deviceEntry DeviceSettings) (device.Device, []error) {
+	var errorTable []error
+	switch deviceEntry.DeviceName {
 	case "genericuart":
-		return device.NewGenericUart(deviceEntry)
+		baudrate, ok := deviceEntry.Settings["baudrate"].(int)
+		if !ok {
+			errorTable = append(errorTable, errors.New("Unable to parse baudrate for: "+deviceEntry.DeviceName+"\nSetting default of: 115200"))
+			baudrate = 115200
+		}
+
+		address, ok := deviceEntry.Settings["address"].(string)
+		if !ok {
+			errorTable = append(errorTable, errors.New("Unable to parse address for: "+deviceEntry.DeviceName))
+			return nil, errorTable
+		}
+		genericUartDevice, err := device.NewGenericUart(deviceEntry.Site, address, baudrate)
+		if err != nil {
+			errorTable = append(errorTable, err)
+			return nil, errorTable
+		}
+		return genericUartDevice, errorTable
 	case "testdevice":
-		return device.NewTestDevice(deviceEntry)
+		testDevice, err := device.NewTestDevice(deviceEntry.Site)
+		if err != nil {
+			errorTable = append(errorTable, err)
+			return nil, errorTable
+		}
+		return testDevice, errorTable
 	default:
-		var errorTable []error
-		errorTable = append(errorTable, errors.New("Specified device not supported: "+deviceEntry["device"]))
+		errorTable = append(errorTable, errors.New("Specified device not supported: "+deviceEntry.DeviceName))
 		return nil, errorTable
 
 	}
