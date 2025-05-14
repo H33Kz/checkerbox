@@ -12,15 +12,13 @@ type Event struct {
 }
 
 type SequenceEvent struct {
-	Id         uint
-	Label      string
-	DeviceName string
-	Function   string
-	Retry      int
-	Site       int
-	Timeout    string
-	Threshold  string
-	Data       string
+	Id           uint
+	Label        string
+	DeviceName   string
+	Retry        int
+	Site         int
+	Timeout      string
+	StepSettings map[string]any
 }
 
 type GraphicEvent struct {
