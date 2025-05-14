@@ -1,42 +1,32 @@
----
 hardware:
-- site: '0'
-  device: genericuart
-  address: /dev/ttyUSB0
-  baudrate: '9600'
+- site: 0
+  device_name: genericuart
+  settings:
+    address: /dev/ttyUSB0
+    baudrate: 9600
 #TODO Stage separating
 sequence:
 - step_label: Send test command
-  retry: '3'
+  retry: 3
   device: genericuart
-  timeout: '1000'
-  function: Send-Receive
-  data: test
-  threshold: test
+  timeout: 1000
+  stepsettings:
+      function: Send-Receive
+      data: test
+      threshold: test
 - step_label: Send test command2
-  retry: '3'
+  retry: 3
   device: genericuart
-  timeout: '1000'
-  function: Send-Receive
-  data: test1
-  threshold: test1
-- step_label: Wait 1000ms
-  device: sequence
-  timeout: '1000'
-  function: Wait
-  data: '1000'
-  threshold: test1
+  timeout: 1000
+  stepsettings:
+      function: Send-Receive
+      data: test2
+      threshold: test2
 - step_label: Send test command3
-  retry: '5'
+  retry: 1000
   device: genericuart
-  timeout: '1000'
-  function: Send-Receive
-  data: test3
-  threshold: test
-- step_label: Send test command4
-  retry: '3'
-  device: genericuart
-  timeout: '1000'
-  function: Send-Receive
-  data: test
-  threshold: test
+  timeout: 1000
+  stepsettings:
+      function: Send-Receive
+      data: test
+      threshold: test3
