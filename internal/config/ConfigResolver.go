@@ -2,6 +2,7 @@ package config
 
 import (
 	"checkerbox/internal/device"
+	"checkerbox/internal/event"
 	"checkerbox/internal/userinterface"
 	"errors"
 )
@@ -41,10 +42,10 @@ func DeviceEntryResolver(deviceEntry DeviceSettings) (device.Device, []error) {
 	}
 }
 
-func GraphicalInterfaceResolver(settingsNode AppSettings) userinterface.GraphicInterface {
+func GraphicalInterfaceResolver(settingsNode AppSettings, returnChannel chan event.ControlEvent) userinterface.GraphicInterface {
 	switch settingsNode.Uiengine {
 	case "tview":
-		return userinterface.NewTviewInterace(settingsNode.Sites)
+		return userinterface.NewTviewInterace(settingsNode.Sites, returnChannel)
 	default:
 		return nil
 	}

@@ -26,6 +26,10 @@ type GraphicEvent struct {
 	Result test.Result
 }
 
+type ControlEvent struct {
+	Type string
+}
+
 type EventBus struct {
 	mutex       sync.Mutex
 	subscribers map[string][]chan<- Event
