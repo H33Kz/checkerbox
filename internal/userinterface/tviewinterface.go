@@ -10,14 +10,16 @@ import (
 )
 
 type TviewInterface struct {
-	eventChannel chan event.Event
-	sites        int
+	eventChannel  chan event.Event
+	returnChannel chan event.ControlEvent
+	sites         int
 }
 
-func NewTviewInterace(sites int) *TviewInterface {
+func NewTviewInterace(sites int, returnChannel chan event.ControlEvent) *TviewInterface {
 	return &TviewInterface{
-		eventChannel: make(chan event.Event),
-		sites:        sites,
+		eventChannel:  make(chan event.Event),
+		returnChannel: returnChannel,
+		sites:         sites,
 	}
 }
 
@@ -31,7 +33,8 @@ func (t *TviewInterface) GraphicEventHandler() {
 
 	// Instatiate tview app struct and pages struct which is main container for all widgets
 	app := tview.NewApplication()
-	mainPages := tview.NewPages()
+	pages := tview.NewPages()
+	masterLayout := tview.NewFlex()
 
 	// Create layout for test page - test results and site status
 	testBox := tview.NewFlex()
@@ -44,22 +47,50 @@ func (t *TviewInterface) GraphicEventHandler() {
 	for i := range siteBoxes {
 		testBox.AddItem(siteBoxes[i], 0, 1, false)
 	}
-	testBox.SetBorder(true).SetTitle("checkerbox")
+	testBox.SetBorder(true).SetTitle("Sequence")
+
+	info := tview.NewTextView().
+		SetRegions(true).
+		SetDynamicColors(true).
+		SetWrap(false)
+	fmt.Fprintf(info, `F1 [darkcyan]Sequence [white][""]`)
+	fmt.Fprintf(info, `F2 [darkcyan]Secondary [white][""]`)
 
 	// TODO additional pages with other widgets
 	secondaryFlex := tview.NewFlex().SetBorder(true).SetTitle("Secondary")
 
 	// Place created pages into main container and set keyboard shortcuts
-	mainPages.AddPage("Test", testBox, true, true)
-	mainPages.AddPage("Secondary", secondaryFlex, true, false)
-	mainPages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyF1 {
-			mainPages.SwitchToPage("Test")
-		} else if event.Key() == tcell.KeyF2 {
-			mainPages.SwitchToPage("Secondary")
+	pages.AddPage("Sequence", testBox, true, true)
+	pages.AddPage("Secondary", secondaryFlex, true, false)
+	masterLayout.SetInputCapture(func(tcellEvent *tcell.EventKey) *tcell.EventKey {
+		if tcellEvent.Key() == tcell.KeyF1 {
+			pages.SwitchToPage("Sequence")
+		} else if tcellEvent.Key() == tcell.KeyF2 {
+			pages.SwitchToPage("Secondary")
+		} else if tcellEvent.Key() == tcell.KeyEnter {
+			for k := range resultLists {
+				delete(resultLists, k)
+			}
+			for _, siteBox := range siteBoxes {
+				siteBox.Clear()
+				siteBox.SetTextColor(tcell.ColorWhite)
+			}
+			t.returnChannel <- event.ControlEvent{
+				Type: "START",
+			}
+		} else if tcellEvent.Key() == tcell.KeyEsc {
+			app.Stop()
+			t.returnChannel <- event.ControlEvent{
+				Type: "QUIT",
+			}
 		}
-		return event
+		return tcellEvent
 	})
+
+	masterLayout.
+		SetDirection(tview.FlexRow).
+		AddItem(pages, 0, 1, true).
+		AddItem(info, 1, 1, false)
 
 	// Main event loop - started in separate goroutine
 	// Sets UI elements based on events received from main goroutine
@@ -127,7 +158,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 	}()
 
 	// Start tview application
-	if err := app.SetRoot(mainPages, true).Run(); err != nil {
+	if err := app.SetRoot(masterLayout, true).Run(); err != nil {
 		panic(err)
 	}
 }
