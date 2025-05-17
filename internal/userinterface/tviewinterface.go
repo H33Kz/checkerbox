@@ -26,30 +26,57 @@ func (t *TviewInterface) GetEventChannel() chan event.Event {
 }
 
 func (t *TviewInterface) GraphicEventHandler() {
+	// Map used for displaying results sent by main routine
 	resultLists := make(map[int][]test.Result)
 
+	// Instatiate tview app struct and pages struct which is main container for all widgets
 	app := tview.NewApplication()
-	mainBox := tview.NewFlex()
+	mainPages := tview.NewPages()
+
+	// Create layout for test page - test results and site status
+	testBox := tview.NewFlex()
+	// Site boxes - containers for results of tests
 	siteBoxes := make(map[int]*tview.TextView)
 	for i := range t.sites {
 		siteBoxes[i] = tview.NewTextView().SetDynamicColors(true).SetWordWrap(true)
 		siteBoxes[i].SetBorder(true).SetTitle("Site" + fmt.Sprintf("%v", i))
 	}
 	for i := range siteBoxes {
-		mainBox.AddItem(siteBoxes[i], 0, 1, false)
+		testBox.AddItem(siteBoxes[i], 0, 1, false)
 	}
-	mainBox.SetBorder(true).SetTitle("checkerbox")
+	testBox.SetBorder(true).SetTitle("checkerbox")
 
+	// TODO additional pages with other widgets
+	secondaryFlex := tview.NewFlex().SetBorder(true).SetTitle("Secondary")
+
+	// Place created pages into main container and set keyboard shortcuts
+	mainPages.AddPage("Test", testBox, true, true)
+	mainPages.AddPage("Secondary", secondaryFlex, true, false)
+	mainPages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyF1 {
+			mainPages.SwitchToPage("Test")
+		} else if event.Key() == tcell.KeyF2 {
+			mainPages.SwitchToPage("Secondary")
+		}
+		return event
+	})
+
+	// Main event loop - started in separate goroutine
+	// Sets UI elements based on events received from main goroutine
 	go func() {
+		// Wait for event in a loop
 		for receivedEvent := range t.eventChannel {
+			// If event is of type "graphicEvent" proceed
 			graphicEvent, ok := receivedEvent.Data.(event.GraphicEvent)
 			if !ok {
 				continue
 			}
 
+			// Switch on type of graphic event and modify related fields
 			switch graphicEvent.Type {
 			case "QUIT":
 				app.Stop()
+				// Event on start of the test. Sets new line in textview in referenced site unless there is already test referenced with the same ID
 			case "testStarted":
 				app.QueueUpdateDraw(func() {
 					if len(resultLists[graphicEvent.Result.Site]) > 0 {
@@ -69,11 +96,8 @@ func (t *TviewInterface) GraphicEventHandler() {
 							fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v \n", result.Id, result.Result, result.Label, result.Message)
 						}
 					}
-					// siteBoxes[graphicEvent.Result.Site].Clear()
-					// for _, result := range resultLists[graphicEvent.Result.Site] {
-					// 	fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v \n", result.Id, result.Result, result.Label, result.Message)
-					// }
 				})
+				// Event indicating end of a test. Changes line previously set by testStarted event.
 			case "testResult":
 				app.QueueUpdateDraw(func() {
 					resultLists[graphicEvent.Result.Site][len(resultLists[graphicEvent.Result.Site])-1] = graphicEvent.Result
@@ -86,7 +110,8 @@ func (t *TviewInterface) GraphicEventHandler() {
 						}
 					}
 				})
-			case "testEnd":
+				// Event for end of the test sequence. Changes color of text based of and outcome
+			case "sequenceEnd":
 				app.QueueUpdateDraw(func() {
 					if graphicEvent.Result.Result == test.Pass {
 						siteBoxes[graphicEvent.Result.Site].SetTextColor(tcell.ColorGreen)
@@ -101,7 +126,8 @@ func (t *TviewInterface) GraphicEventHandler() {
 		}
 	}()
 
-	if err := app.SetRoot(mainBox, true).Run(); err != nil {
+	// Start tview application
+	if err := app.SetRoot(mainPages, true).Run(); err != nil {
 		panic(err)
 	}
 }
