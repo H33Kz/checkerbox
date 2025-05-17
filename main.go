@@ -110,6 +110,8 @@ func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicatio
 			})
 			ctx.ctxMutex.Unlock()
 			break
+		} else if (result.Result == test.Fail || result.Result == test.Error) && ctx.noError {
+			sequenceFailed = true
 		}
 	}
 	if !sequenceFailed {
