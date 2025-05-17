@@ -9,7 +9,6 @@ import (
 	"checkerbox/internal/util"
 	"log"
 	"sync"
-	"time"
 )
 
 type applicationContext struct {
@@ -22,35 +21,29 @@ type applicationContext struct {
 	eventBus           *event.EventBus
 	deviceErrors       []error
 	graphicInterface   userinterface.GraphicInterface
+	uiReturnChannel    chan event.ControlEvent
 }
 
 func main() {
 	var ctx applicationContext
-	ctx.noError = false
-
 	loadAppSettings(&ctx)
 
 	reloadConfiguration(&ctx, "config/config.yml")
 
-	for i, sequenceEventList := range ctx.sequenceEventLists {
-		go handleSequence(sequenceEventList, &ctx, i)
+out:
+	for receivedEvent := range ctx.uiReturnChannel {
+		switch receivedEvent.Type {
+		case "START":
+			for i, sequenceEventList := range ctx.sequenceEventLists {
+				go handleSequence(*sequenceEventList, &ctx, i)
+			}
+		case "QUIT":
+			break out
+		}
 	}
-
-	time.Sleep(time.Second * 15)
-
-	ctx.ctxMutex.Lock()
-	ctx.eventBus.Publish(event.Event{
-		Type: "graphicEvent",
-		Data: event.GraphicEvent{
-			Type: "QUIT",
-		},
-	})
-	ctx.ctxMutex.Unlock()
-
-	time.Sleep(time.Second * 1)
 }
 
-func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicationContext, siteId int) {
+func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *applicationContext, siteId int) {
 	siteResultChannel := make(chan test.Result)
 	sequenceFailed := false
 	for range sequenceEventsList.Len() {
@@ -134,8 +127,10 @@ func loadAppSettings(ctx *applicationContext) {
 	// Load basic app settings on startup
 	ctx.appSettings = config.NewAppSettings()
 	ctx.sequenceEventLists = make(map[int]*util.Queue[event.Event])
+	ctx.uiReturnChannel = make(chan event.ControlEvent)
 	ctx.eventBus = event.NewEventBus()
-	ctx.graphicInterface = config.GraphicalInterfaceResolver(*ctx.appSettings)
+	ctx.graphicInterface = config.GraphicalInterfaceResolver(*ctx.appSettings, ctx.uiReturnChannel)
+	ctx.noError = false
 
 	if ctx.graphicInterface != nil {
 		ctx.eventBus.Subscribe("graphicEvent", ctx.graphicInterface.GetEventChannel())
