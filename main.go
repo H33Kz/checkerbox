@@ -101,7 +101,7 @@ func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicatio
 			ctx.eventBus.Publish(event.Event{
 				Type: "graphicEvent",
 				Data: event.GraphicEvent{
-					Type: "testEnd",
+					Type: "sequenceEnd",
 					Result: test.Result{
 						Result: test.Fail,
 						Site:   siteId,
@@ -119,7 +119,7 @@ func handleSequence(sequenceEventsList *util.Queue[event.Event], ctx *applicatio
 		ctx.eventBus.Publish(event.Event{
 			Type: "graphicEvent",
 			Data: event.GraphicEvent{
-				Type: "testEnd",
+				Type: "sequenceEnd",
 				Result: test.Result{
 					Result: test.Pass,
 					Site:   siteId,
