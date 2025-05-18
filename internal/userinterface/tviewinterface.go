@@ -51,7 +51,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 	for i := range siteBoxes {
 		testBox.AddItem(siteBoxes[i], 0, 1, false)
 	}
-	testBox.SetBorder(true).SetTitle("Sequence")
+	testBox.SetBorder(true).SetTitle(" Sequence ")
 
 	info := tview.NewTextView().
 		SetRegions(true).
@@ -63,7 +63,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 	debugBox := tview.NewFlex()
 	debugTextField := tview.NewTextView()
 	debugBox.AddItem(debugTextField, 0, 1, false)
-	debugBox.SetBorder(true).SetTitle("Debug Info")
+	debugBox.SetBorder(true).SetTitle(" Debug Info ")
 
 	// Place created pages into main container and set keyboard shortcuts
 	pages.AddPage("Sequence", testBox, true, true)
@@ -116,7 +116,11 @@ func (t *TviewInterface) GraphicEventHandler() {
 			switch graphicEvent.Type {
 			case "deviceInit":
 				app.QueueUpdateDraw(func() {
-					fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%s %s\n", graphicEvent.Result.Result, graphicEvent.Result.Label)
+					if graphicEvent.Result.Result == test.Pass {
+						fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "[green]%s [white]%s\n", graphicEvent.Result.Result, graphicEvent.Result.Label)
+					} else {
+						fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "[red]%s [white]%s\n", graphicEvent.Result.Result, graphicEvent.Result.Label)
+					}
 				})
 			// Event on start of the test. Sets new line in textview in referenced site unless there is already test referenced with the same ID
 			case "testStarted":
