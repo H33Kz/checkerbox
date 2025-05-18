@@ -47,7 +47,7 @@ func (s *SequenceDevice) functionResolver(sequenceEvent event.SequenceEvent) tes
 
 	switch function {
 	case "Wait":
-		data, ok := sequenceEvent.StepSettings["data"].(int)
+		data, ok := sequenceEvent.StepSettings["time"].(int)
 		if !ok {
 			return test.Result{Result: test.Error, Message: "Error parsing time to wait"}
 		}
