@@ -9,6 +9,7 @@ import (
 	"checkerbox/internal/util"
 	"log"
 	"sync"
+	"time"
 )
 
 type applicationContext struct {
@@ -30,15 +31,17 @@ func main() {
 
 	reloadConfiguration(&ctx, "config/config.yml")
 
-out:
-	for receivedEvent := range ctx.uiReturnChannel {
-		switch receivedEvent.Type {
-		case "START":
-			for i, sequenceEventList := range ctx.sequenceEventLists {
-				go handleSequence(*sequenceEventList, &ctx, i)
+	if ctx.graphicInterface != nil {
+	out:
+		for receivedEvent := range ctx.uiReturnChannel {
+			switch receivedEvent.Type {
+			case "START":
+				for i, sequenceEventList := range ctx.sequenceEventLists {
+					go handleSequence(*sequenceEventList, &ctx, i)
+				}
+			case "QUIT":
+				break out
 			}
-		case "QUIT":
-			break out
 		}
 	}
 }
@@ -70,19 +73,37 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 			})
 			ctx.ctxMutex.Unlock()
 
-			result = <-siteResultChannel
-			result.Retried = retried
+			select {
+			case result = <-siteResultChannel:
+				result.Retried = retried
+				ctx.ctxMutex.Lock()
+				ctx.eventBus.Publish(event.Event{
+					Type: "graphicEvent",
+					Data: event.GraphicEvent{
+						Type:   "testResult",
+						Result: result,
+					},
+				})
+				ctx.ctxMutex.Unlock()
+			case <-time.After(time.Millisecond * time.Duration(sequenceEventForUI.Timeout)):
+				result = test.Result{
+					Result:  test.Error,
+					Site:    sequenceEventForUI.Site,
+					Id:      sequenceEventForUI.Id,
+					Label:   sequenceEventForUI.Label,
+					Message: "Timeout",
+				}
+				ctx.ctxMutex.Lock()
+				ctx.eventBus.Publish(event.Event{
+					Type: "graphicEvent",
+					Data: event.GraphicEvent{
+						Type:   "testResult",
+						Result: result,
+					},
+				})
+				ctx.ctxMutex.Unlock()
+			}
 
-			ctx.ctxMutex.Lock()
-			ctx.eventBus.Publish(event.Event{
-				Type: "graphicEvent",
-				Data: event.GraphicEvent{
-					Type:   "testResult",
-					Result: result,
-				},
-			})
-			ctx.ctxMutex.Unlock()
-			// fmt.Println(result)
 			if result.Result == test.Pass || result.Result == test.Error || result.Result == test.Done {
 				break
 			}
@@ -163,6 +184,7 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 					Retry:        sequenceConfigNode.Retry,
 					DeviceName:   sequenceConfigNode.Device,
 					StepSettings: sequenceConfigNode.StepSettings,
+					Timeout:      sequenceConfigNode.Timeout,
 				},
 			})
 		}
@@ -179,6 +201,29 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 
 		if initializedDevice != nil {
 			ctx.devices = append(ctx.devices, initializedDevice)
+			ctx.eventBus.Publish(event.Event{
+				Type: "graphicEvent",
+				Data: event.GraphicEvent{
+					Type: "deviceInit",
+					Result: test.Result{
+						Result: test.Pass,
+						Label:  deviceDeclaration.DeviceName,
+						Site:   deviceDeclaration.Site,
+					},
+				},
+			})
+		} else {
+			ctx.eventBus.Publish(event.Event{
+				Type: "graphicEvent",
+				Data: event.GraphicEvent{
+					Type: "deviceInit",
+					Result: test.Result{
+						Result: test.Error,
+						Label:  deviceDeclaration.DeviceName,
+						Site:   deviceDeclaration.Site,
+					},
+				},
+			})
 		}
 		for range initDeviceErrorTable {
 			// fmt.Println(errs.Error())

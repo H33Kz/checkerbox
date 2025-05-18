@@ -17,7 +17,7 @@ type SequenceEvent struct {
 	DeviceName   string
 	Retry        int
 	Site         int
-	Timeout      string
+	Timeout      int
 	StepSettings map[string]any
 }
 
