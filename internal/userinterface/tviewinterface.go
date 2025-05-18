@@ -58,19 +58,21 @@ func (t *TviewInterface) GraphicEventHandler() {
 		SetDynamicColors(true).
 		SetWrap(false)
 	fmt.Fprintf(info, `F1 [darkcyan]Sequence [white][""]`)
-	fmt.Fprintf(info, `F2 [darkcyan]Secondary [white][""]`)
+	fmt.Fprintf(info, `F2 [darkcyan]DebugInfo [white][""]`)
 
-	// TODO additional pages with other widgets
-	secondaryFlex := tview.NewFlex().SetBorder(true).SetTitle("Secondary")
+	debugBox := tview.NewFlex()
+	debugTextField := tview.NewTextView()
+	debugBox.AddItem(debugTextField, 0, 1, false)
+	debugBox.SetBorder(true).SetTitle("Debug Info")
 
 	// Place created pages into main container and set keyboard shortcuts
 	pages.AddPage("Sequence", testBox, true, true)
-	pages.AddPage("Secondary", secondaryFlex, true, false)
+	pages.AddPage("DebugInfo", debugBox, true, false)
 	masterLayout.SetInputCapture(func(tcellEvent *tcell.EventKey) *tcell.EventKey {
 		if tcellEvent.Key() == tcell.KeyF1 {
 			pages.SwitchToPage("Sequence")
 		} else if tcellEvent.Key() == tcell.KeyF2 {
-			pages.SwitchToPage("Secondary")
+			pages.SwitchToPage("DebugInfo")
 		} else if tcellEvent.Key() == tcell.KeyEnter {
 			if !t.sequenceRunning {
 				t.sequenceRunning = true
@@ -164,7 +166,11 @@ func (t *TviewInterface) GraphicEventHandler() {
 						siteBoxes[graphicEvent.Result.Site].SetTextColor(tcell.ColorRed)
 					}
 				})
-
+			case "debugInfo":
+				app.QueueUpdateDraw(func() {
+					result := graphicEvent.Result
+					fmt.Fprintf(debugTextField, "Site:%d %d %s %s: %s \n", result.Site, result.Id, result.Result, result.Label, result.Message)
+				})
 			default:
 				continue
 			}
