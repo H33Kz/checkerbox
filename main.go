@@ -212,6 +212,18 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 					},
 				},
 			})
+			ctx.eventBus.Publish(event.Event{
+				Type: "graphicEvent",
+				Data: event.GraphicEvent{
+					Type: "debugInfo",
+					Result: test.Result{
+						Result:  test.Pass,
+						Label:   deviceDeclaration.DeviceName,
+						Site:    deviceDeclaration.Site,
+						Message: "Device initiated",
+					},
+				},
+			})
 		} else {
 			ctx.eventBus.Publish(event.Event{
 				Type: "graphicEvent",
@@ -224,14 +236,24 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 					},
 				},
 			})
-		}
-		for range initDeviceErrorTable {
-			// fmt.Println(errs.Error())
+			deviceInitErrorString := ""
+			for _, err = range initDeviceErrorTable {
+				deviceInitErrorString += err.Error() + "\n"
+			}
+			ctx.eventBus.Publish(event.Event{
+				Type: "graphicEvent",
+				Data: event.GraphicEvent{
+					Type: "debugInfo",
+					Result: test.Result{
+						Result:  test.Error,
+						Label:   deviceDeclaration.DeviceName,
+						Site:    deviceDeclaration.Site,
+						Message: "Error while initializing device:\n" + deviceInitErrorString,
+					},
+				},
+			})
 		}
 	}
-	// for _, device := range ctx.devices {
-	// 	device.Print()
-	// }
 
 	// Instantiate variables regarding event structure
 	// Create event bus and subsribe device modules to events of type "SequenceEvent"
