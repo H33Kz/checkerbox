@@ -36,7 +36,9 @@ func initPort(addres string, baudrate int) (serial.Port, error) {
 	port, error := serial.Open(addres, &serial.Mode{
 		BaudRate: baudrate,
 	})
-	port.SetReadTimeout(1000)
+	if error == nil {
+		port.SetReadTimeout(1000)
+	}
 	return port, error
 }
 
