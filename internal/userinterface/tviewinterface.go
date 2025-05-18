@@ -10,16 +10,20 @@ import (
 )
 
 type TviewInterface struct {
-	eventChannel  chan event.Event
-	returnChannel chan event.ControlEvent
-	sites         int
+	eventChannel    chan event.Event
+	returnChannel   chan event.ControlEvent
+	sites           int
+	sitesFinished   int
+	sequenceRunning bool
 }
 
 func NewTviewInterace(sites int, returnChannel chan event.ControlEvent) *TviewInterface {
 	return &TviewInterface{
-		eventChannel:  make(chan event.Event),
-		returnChannel: returnChannel,
-		sites:         sites,
+		eventChannel:    make(chan event.Event),
+		returnChannel:   returnChannel,
+		sites:           sites,
+		sitesFinished:   0,
+		sequenceRunning: false,
 	}
 }
 
@@ -68,15 +72,18 @@ func (t *TviewInterface) GraphicEventHandler() {
 		} else if tcellEvent.Key() == tcell.KeyF2 {
 			pages.SwitchToPage("Secondary")
 		} else if tcellEvent.Key() == tcell.KeyEnter {
-			for k := range resultLists {
-				delete(resultLists, k)
-			}
-			for _, siteBox := range siteBoxes {
-				siteBox.Clear()
-				siteBox.SetTextColor(tcell.ColorWhite)
-			}
-			t.returnChannel <- event.ControlEvent{
-				Type: "START",
+			if !t.sequenceRunning {
+				t.sequenceRunning = true
+				for k := range resultLists {
+					delete(resultLists, k)
+				}
+				for _, siteBox := range siteBoxes {
+					siteBox.Clear()
+					siteBox.SetTextColor(tcell.ColorWhite)
+				}
+				t.returnChannel <- event.ControlEvent{
+					Type: "START",
+				}
 			}
 		} else if tcellEvent.Key() == tcell.KeyEsc {
 			app.Stop()
@@ -105,9 +112,11 @@ func (t *TviewInterface) GraphicEventHandler() {
 
 			// Switch on type of graphic event and modify related fields
 			switch graphicEvent.Type {
-			case "QUIT":
-				app.Stop()
-				// Event on start of the test. Sets new line in textview in referenced site unless there is already test referenced with the same ID
+			case "deviceInit":
+				app.QueueUpdateDraw(func() {
+					fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%s %s\n", graphicEvent.Result.Result, graphicEvent.Result.Label)
+				})
+			// Event on start of the test. Sets new line in textview in referenced site unless there is already test referenced with the same ID
 			case "testStarted":
 				app.QueueUpdateDraw(func() {
 					if len(resultLists[graphicEvent.Result.Site]) > 0 {
@@ -143,6 +152,11 @@ func (t *TviewInterface) GraphicEventHandler() {
 				})
 				// Event for end of the test sequence. Changes color of text based of and outcome
 			case "sequenceEnd":
+				t.sitesFinished++
+				if t.sitesFinished == t.sites {
+					t.sequenceRunning = false
+					t.sitesFinished = 0
+				}
 				app.QueueUpdateDraw(func() {
 					if graphicEvent.Result.Result == test.Pass {
 						siteBoxes[graphicEvent.Result.Site].SetTextColor(tcell.ColorGreen)
