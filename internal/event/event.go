@@ -28,6 +28,7 @@ type GraphicEvent struct {
 
 type ControlEvent struct {
 	Type string
+	Data any
 }
 
 type EventBus struct {
