@@ -4,6 +4,7 @@ import (
 	"checkerbox/internal/event"
 	"checkerbox/internal/test"
 	"fmt"
+	"os"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -59,21 +60,54 @@ func (t *TviewInterface) GraphicEventHandler() {
 		SetWrap(false)
 	fmt.Fprintf(info, `F1 [darkcyan]Sequence [white][""]`)
 	fmt.Fprintf(info, `F2 [darkcyan]DebugInfo [white][""]`)
+	fmt.Fprintf(info, `F3 [darkcyan]ConfigPicker [white][""]`)
 
+	// Create page for debug information
 	debugBox := tview.NewFlex()
 	debugTextField := tview.NewTextView()
 	debugBox.AddItem(debugTextField, 0, 1, false)
 	debugBox.SetBorder(true).SetTitle(" Debug Info ")
 
+	// Create page for choosing config file
+	configBox := tview.NewFlex()
+	configList := tview.NewList()
+	configFiles, err := os.ReadDir("./config/")
+	if err != nil {
+		fmt.Fprintf(debugTextField, "%s \n", err.Error())
+	}
+	for i, file := range configFiles {
+		configList.AddItem(file.Name(), "", rune(i+1), func() {
+			t.returnChannel <- event.ControlEvent{
+				Type: "CONFIGPICK",
+			}
+		})
+	}
+	modalFlex := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(tview.NewTextView().SetText("Choose config file"), 2, 1, false).
+		AddItem(configList, 0, 2, true)
+	configBoxWidthLayout := tview.NewFlex().
+		AddItem(nil, 0, 1, false).
+		AddItem(modalFlex, 40, 0, true).
+		AddItem(nil, 0, 1, false)
+	configboxHeightLayout := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(nil, 0, 1, false).
+		AddItem(configBoxWidthLayout, 10, 0, true).
+		AddItem(nil, 0, 1, false)
+	configBox.AddItem(configboxHeightLayout, 0, 1, true)
+	configBox.SetBorder(true).SetTitle(" Config Picker ")
+
 	// Place created pages into main container and set keyboard shortcuts
 	pages.AddPage("Sequence", testBox, true, true)
 	pages.AddPage("DebugInfo", debugBox, true, false)
+	pages.AddPage("ConfigPicker", configBox, true, false)
 	masterLayout.SetInputCapture(func(tcellEvent *tcell.EventKey) *tcell.EventKey {
 		if tcellEvent.Key() == tcell.KeyF1 {
 			pages.SwitchToPage("Sequence")
 		} else if tcellEvent.Key() == tcell.KeyF2 {
 			pages.SwitchToPage("DebugInfo")
-		} else if tcellEvent.Key() == tcell.KeyEnter {
+		} else if tcellEvent.Key() == tcell.KeyF12 {
 			if !t.sequenceRunning {
 				t.sequenceRunning = true
 				for k := range resultLists {
@@ -87,6 +121,8 @@ func (t *TviewInterface) GraphicEventHandler() {
 					Type: "START",
 				}
 			}
+		} else if tcellEvent.Key() == tcell.KeyF3 {
+			pages.SwitchToPage("ConfigPicker")
 		} else if tcellEvent.Key() == tcell.KeyEsc {
 			app.Stop()
 			t.returnChannel <- event.ControlEvent{
