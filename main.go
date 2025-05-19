@@ -29,8 +29,6 @@ func main() {
 	var ctx applicationContext
 	loadAppSettings(&ctx)
 
-	reloadConfiguration(&ctx, "config/config.yml")
-
 	if ctx.graphicInterface != nil {
 	out:
 		for receivedEvent := range ctx.uiReturnChannel {
@@ -41,6 +39,8 @@ func main() {
 				}
 			case "QUIT":
 				break out
+			case "CONFIGPICK":
+				reloadConfiguration(&ctx, "./config/"+receivedEvent.Data.(string))
 			}
 		}
 	}
@@ -199,6 +199,11 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 	for _, deviceDeclaration := range ctx.config.GetHardwareConfig() {
 		initializedDevice, initDeviceErrorTable := config.DeviceEntryResolver(deviceDeclaration)
 
+		deviceInitErrorString := ""
+		for _, err = range initDeviceErrorTable {
+			deviceInitErrorString += err.Error() + "\n"
+		}
+
 		if initializedDevice != nil {
 			ctx.devices = append(ctx.devices, initializedDevice)
 			ctx.eventBus.Publish(event.Event{
@@ -220,7 +225,7 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 						Result:  test.Pass,
 						Label:   deviceDeclaration.DeviceName,
 						Site:    deviceDeclaration.Site,
-						Message: "Device initiated",
+						Message: "Device initiated\n" + deviceInitErrorString,
 					},
 				},
 			})
@@ -236,10 +241,6 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 					},
 				},
 			})
-			deviceInitErrorString := ""
-			for _, err = range initDeviceErrorTable {
-				deviceInitErrorString += err.Error() + "\n"
-			}
 			ctx.eventBus.Publish(event.Event{
 				Type: "graphicEvent",
 				Data: event.GraphicEvent{
