@@ -5,6 +5,7 @@ import (
 	"checkerbox/internal/test"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -79,6 +80,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 		configList.AddItem(file.Name(), "", rune(i+1), func() {
 			t.returnChannel <- event.ControlEvent{
 				Type: "CONFIGPICK",
+				Data: file.Name(),
 			}
 		})
 	}
@@ -209,7 +211,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 			case "debugInfo":
 				app.QueueUpdateDraw(func() {
 					result := graphicEvent.Result
-					fmt.Fprintf(debugTextField, "Site:%d %d %s %s: %s \n", result.Site, result.Id, result.Result, result.Label, result.Message)
+					fmt.Fprintf(debugTextField, "[gray]%s: [white]Site:%d %d %s %s: %s \n", time.Now().Format("15:4:5"), result.Site, result.Id, result.Result, result.Label, result.Message)
 				})
 			default:
 				continue
