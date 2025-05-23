@@ -78,10 +78,16 @@ func (t *TviewInterface) GraphicEventHandler() {
 	}
 	for i, file := range configFiles {
 		configList.AddItem(file.Name(), "", rune(i+1), func() {
+			// app.QueueUpdateDraw(func() {
+			// 	for _, siteBox := range siteBoxes {
+			// 		siteBox.Clear()
+			// 	}
+			// })
 			t.returnChannel <- event.ControlEvent{
 				Type: "CONFIGPICK",
 				Data: file.Name(),
 			}
+			app.Stop()
 		})
 	}
 	modalFlex := tview.NewFlex().
@@ -211,7 +217,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 			case "debugInfo":
 				app.QueueUpdateDraw(func() {
 					result := graphicEvent.Result
-					fmt.Fprintf(debugTextField, "[gray]%s: [white]Site:%d %d %s %s: %s \n", time.Now().Format("15:4:5"), result.Site, result.Id, result.Result, result.Label, result.Message)
+					fmt.Fprintf(debugTextField, "%s: Site:%d %d %s %s: %s \n", time.Now().Format("15:4:5"), result.Site, result.Id, result.Result, result.Label, result.Message)
 				})
 			default:
 				continue

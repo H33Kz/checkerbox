@@ -2,6 +2,7 @@ package event
 
 import (
 	"checkerbox/internal/test"
+	"slices"
 	"sync"
 )
 
@@ -53,5 +54,14 @@ func (eBus *EventBus) Publish(event Event) {
 	defer eBus.mutex.Unlock()
 	for _, subscriber := range eBus.subscribers[event.Type] {
 		subscriber <- event
+	}
+}
+
+func (eBus *EventBus) PublishAndDelete(event Event) {
+	eBus.mutex.Lock()
+	defer eBus.mutex.Unlock()
+	for i, subscriber := range eBus.subscribers[event.Type] {
+		subscriber <- event
+		eBus.subscribers[event.Type] = slices.Delete(eBus.subscribers[event.Type], i, i)
 	}
 }

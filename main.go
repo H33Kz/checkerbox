@@ -40,6 +40,11 @@ func main() {
 			case "QUIT":
 				break out
 			case "CONFIGPICK":
+				newCtx := applicationContext{}
+				newCtx.graphicInterface = ctx.graphicInterface
+				newCtx.uiReturnChannel = ctx.uiReturnChannel
+				ctx = newCtx
+				loadAppSettings(&ctx)
 				reloadConfiguration(&ctx, "./config/"+receivedEvent.Data.(string))
 			}
 		}
@@ -148,9 +153,11 @@ func loadAppSettings(ctx *applicationContext) {
 	// Load basic app settings on startup
 	ctx.appSettings = config.NewAppSettings()
 	ctx.sequenceEventLists = make(map[int]*util.Queue[event.Event])
-	ctx.uiReturnChannel = make(chan event.ControlEvent)
 	ctx.eventBus = event.NewEventBus()
-	ctx.graphicInterface = config.GraphicalInterfaceResolver(*ctx.appSettings, ctx.uiReturnChannel)
+	if ctx.graphicInterface == nil {
+		ctx.uiReturnChannel = make(chan event.ControlEvent)
+		ctx.graphicInterface = config.GraphicalInterfaceResolver(*ctx.appSettings, ctx.uiReturnChannel)
+	}
 	ctx.noError = false
 
 	if ctx.graphicInterface != nil {
@@ -189,7 +196,16 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 			})
 		}
 	}
-
+	ctx.eventBus.Publish(event.Event{
+		Type: "graphicEvent",
+		Data: event.GraphicEvent{
+			Type: "debugInfo",
+			Result: test.Result{
+				Result:  test.Pass,
+				Message: "Configuration loading started\n",
+			},
+		},
+	})
 	for i := 0; i <= ctx.appSettings.Sites-1; i++ {
 		ctx.devices = append(ctx.devices, device.NewSequenceDevice(i))
 	}
