@@ -196,16 +196,12 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 			})
 		}
 	}
-	ctx.eventBus.Publish(event.Event{
-		Type: "graphicEvent",
-		Data: event.GraphicEvent{
-			Type: "debugInfo",
-			Result: test.Result{
-				Result:  test.Pass,
-				Message: "Configuration loading started\n",
-			},
-		},
-	})
+
+	// I dont know why but first event sent is never received by UI routine and changing timing doesn't help
+	// Doing it twice dodges the issue
+	SendDebugInfoEvent(ctx, test.Pass, 0, "", "Configuration Loading started\n")
+	SendDebugInfoEvent(ctx, test.Pass, 0, "", "Configuration Loading started\n")
+
 	for i := 0; i <= ctx.appSettings.Sites-1; i++ {
 		ctx.devices = append(ctx.devices, device.NewSequenceDevice(i))
 	}
@@ -222,58 +218,16 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 
 		if initializedDevice != nil {
 			ctx.devices = append(ctx.devices, initializedDevice)
-			ctx.eventBus.Publish(event.Event{
-				Type: "graphicEvent",
-				Data: event.GraphicEvent{
-					Type: "deviceInit",
-					Result: test.Result{
-						Result: test.Pass,
-						Label:  deviceDeclaration.DeviceName,
-						Site:   deviceDeclaration.Site,
-					},
-				},
-			})
-			ctx.eventBus.Publish(event.Event{
-				Type: "graphicEvent",
-				Data: event.GraphicEvent{
-					Type: "debugInfo",
-					Result: test.Result{
-						Result:  test.Pass,
-						Label:   deviceDeclaration.DeviceName,
-						Site:    deviceDeclaration.Site,
-						Message: "Device initiated\n" + deviceInitErrorString,
-					},
-				},
-			})
+			SendDeviceInitEvent(ctx, test.Pass, deviceDeclaration.Site, deviceDeclaration.DeviceName)
+			SendDebugInfoEvent(ctx, test.Pass, deviceDeclaration.Site, deviceDeclaration.DeviceName, "Device initiated\n"+deviceInitErrorString)
 		} else {
-			ctx.eventBus.Publish(event.Event{
-				Type: "graphicEvent",
-				Data: event.GraphicEvent{
-					Type: "deviceInit",
-					Result: test.Result{
-						Result: test.Error,
-						Label:  deviceDeclaration.DeviceName,
-						Site:   deviceDeclaration.Site,
-					},
-				},
-			})
-			ctx.eventBus.Publish(event.Event{
-				Type: "graphicEvent",
-				Data: event.GraphicEvent{
-					Type: "debugInfo",
-					Result: test.Result{
-						Result:  test.Error,
-						Label:   deviceDeclaration.DeviceName,
-						Site:    deviceDeclaration.Site,
-						Message: "Error while initializing device:\n" + deviceInitErrorString,
-					},
-				},
-			})
+			SendDeviceInitEvent(ctx, test.Error, deviceDeclaration.Site, deviceDeclaration.DeviceName)
+			SendDebugInfoEvent(ctx, test.Error, deviceDeclaration.Site, deviceDeclaration.DeviceName, "Error while initializing device:\n"+deviceInitErrorString)
 		}
 	}
 
 	// Instantiate variables regarding event structure
-	// Create event bus and subsribe device modules to events of type "SequenceEvent"
+	// Subsribe device modules to events of type "SequenceEvent"
 	for _, device := range ctx.devices {
 		ctx.eventBus.Subscribe("SequenceEvent", device.GetEventChannel())
 	}
@@ -282,4 +236,46 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 	for _, device := range ctx.devices {
 		go device.SequenceEventHandler()
 	}
+}
+
+func SendDebugInfoEvent(ctx *applicationContext, result test.ResultType, site int, label, message string) {
+	ctx.eventBus.Publish(event.Event{
+		Type: "graphicEvent",
+		Data: event.GraphicEvent{
+			Type: "debugInfo",
+			Result: test.Result{
+				Result:  result,
+				Label:   label,
+				Site:    site,
+				Message: message,
+			},
+		},
+	})
+}
+
+func SendDeviceInitEvent(ctx *applicationContext, result test.ResultType, site int, label string) {
+	ctx.eventBus.Publish(event.Event{
+		Type: "graphicEvent",
+		Data: event.GraphicEvent{
+			Type: "deviceInit",
+			Result: test.Result{
+				Result: result,
+				Label:  label,
+				Site:   site,
+			},
+		},
+	})
+}
+
+func SendSequenceEndEvent(ctx *applicationContext, result test.ResultType, site int) {
+	ctx.eventBus.Publish(event.Event{
+		Type: "graphicEvent",
+		Data: event.GraphicEvent{
+			Type: "sequenceEnd",
+			Result: test.Result{
+				Result: result,
+				Site:   site,
+			},
+		},
+	})
 }
