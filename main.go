@@ -60,36 +60,14 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 		var result test.Result
 		for retried := range singleSequenceEvent.Data.(event.SequenceEvent).Retry {
 
-			ctx.ctxMutex.Lock()
 			ctx.eventBus.Publish(singleSequenceEvent)
 			sequenceEventForUI := singleSequenceEvent.Data.(event.SequenceEvent)
-			ctx.eventBus.Publish(event.Event{
-				Type: "graphicEvent",
-				Data: event.GraphicEvent{
-					Type: "testStarted",
-					Result: test.Result{
-						Site:    sequenceEventForUI.Site,
-						Id:      sequenceEventForUI.Id,
-						Label:   sequenceEventForUI.Label,
-						Message: "...",
-						Result:  test.InProgress,
-					},
-				},
-			})
-			ctx.ctxMutex.Unlock()
+			SendTestStartedEvent(ctx, sequenceEventForUI.Id, sequenceEventForUI.Site, sequenceEventForUI.Label)
 
 			select {
 			case result = <-siteResultChannel:
 				result.Retried = retried
-				ctx.ctxMutex.Lock()
-				ctx.eventBus.Publish(event.Event{
-					Type: "graphicEvent",
-					Data: event.GraphicEvent{
-						Type:   "testResult",
-						Result: result,
-					},
-				})
-				ctx.ctxMutex.Unlock()
+				SendTestResultEvent(ctx, result)
 			case <-time.After(time.Millisecond * time.Duration(sequenceEventForUI.Timeout)):
 				result = test.Result{
 					Result:  test.Error,
@@ -98,15 +76,7 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 					Label:   sequenceEventForUI.Label,
 					Message: "Timeout",
 				}
-				ctx.ctxMutex.Lock()
-				ctx.eventBus.Publish(event.Event{
-					Type: "graphicEvent",
-					Data: event.GraphicEvent{
-						Type:   "testResult",
-						Result: result,
-					},
-				})
-				ctx.ctxMutex.Unlock()
+				SendTestResultEvent(ctx, result)
 			}
 
 			if result.Result == test.Pass || result.Result == test.Error || result.Result == test.Done {
@@ -116,36 +86,14 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 		if (result.Result == test.Fail || result.Result == test.Error) && !ctx.noError {
 			sequenceFailed = true
 			sequenceEventsList.Flush()
-			ctx.ctxMutex.Lock()
-			ctx.eventBus.Publish(event.Event{
-				Type: "graphicEvent",
-				Data: event.GraphicEvent{
-					Type: "sequenceEnd",
-					Result: test.Result{
-						Result: test.Fail,
-						Site:   siteId,
-					},
-				},
-			})
-			ctx.ctxMutex.Unlock()
+			SendSequenceEndEvent(ctx, test.Fail, siteId)
 			break
 		} else if (result.Result == test.Fail || result.Result == test.Error) && ctx.noError {
 			sequenceFailed = true
 		}
 	}
 	if !sequenceFailed {
-		ctx.ctxMutex.Lock()
-		ctx.eventBus.Publish(event.Event{
-			Type: "graphicEvent",
-			Data: event.GraphicEvent{
-				Type: "sequenceEnd",
-				Result: test.Result{
-					Result: test.Pass,
-					Site:   siteId,
-				},
-			},
-		})
-		ctx.ctxMutex.Unlock()
+		SendSequenceEndEvent(ctx, test.Pass, siteId)
 	}
 }
 
@@ -275,6 +223,32 @@ func SendSequenceEndEvent(ctx *applicationContext, result test.ResultType, site 
 			Result: test.Result{
 				Result: result,
 				Site:   site,
+			},
+		},
+	})
+}
+
+func SendTestResultEvent(ctx *applicationContext, result test.Result) {
+	ctx.eventBus.Publish(event.Event{
+		Type: "graphicEvent",
+		Data: event.GraphicEvent{
+			Type:   "testResult",
+			Result: result,
+		},
+	})
+}
+
+func SendTestStartedEvent(ctx *applicationContext, id uint, site int, label string) {
+	ctx.eventBus.Publish(event.Event{
+		Type: "graphicEvent",
+		Data: event.GraphicEvent{
+			Type: "testStarted",
+			Result: test.Result{
+				Site:    site,
+				Id:      id,
+				Label:   label,
+				Message: "...",
+				Result:  test.InProgress,
 			},
 		},
 	})
