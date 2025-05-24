@@ -40,6 +40,11 @@ hardware:
     baudrate: 9600
 - site: 1
   device_name: testdevice
+- site: 1
+  device_name: genericuart
+  settings:
+    address: /dev/ttyUSB1
+    baudrate: 9600
 #TODO Stage separating
 sequence:
 - step_label: Send test command
@@ -69,7 +74,7 @@ sequence:
 - step_label: Send test command3
   retry: 20
   device: sequence
-  timeout: 1000
+  timeout: 3000
   stepsettings:
       function: Wait
       time: 1000

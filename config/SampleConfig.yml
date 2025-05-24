@@ -1,0 +1,638 @@
+hardware:
+- site: 0
+  device_name: testdevice
+- site: 1
+  device_name: testdevice
+#TODO Stage separating
+sequence:
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command3
+  retry: 20
+  device: sequence
+  timeout: 3000
+  stepsettings:
+      function: Wait
+      time: 1000
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
