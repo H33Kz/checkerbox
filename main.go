@@ -69,14 +69,14 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 
 			ctx.ctxMutex.Lock()
 			ctx.eventBus.Publish(singleSequenceEvent)
-			ctx.ctxMutex.Unlock()
 			sequenceEventForUI := singleSequenceEvent.Data.(event.SequenceEvent)
 			SendTestStartedEvent(ctx, sequenceEventForUI.Id, sequenceEventForUI.Site, sequenceEventForUI.Label)
+			SendDebugInfoEvent(ctx, test.InProgress, sequenceEventForUI.Site, sequenceEventForUI.Label, "Test started")
+			ctx.ctxMutex.Unlock()
 
 			select {
 			case result = <-siteResultChannel:
 				result.Retried = retried
-				SendTestResultEvent(ctx, result)
 			case <-time.After(time.Millisecond * time.Duration(sequenceEventForUI.Timeout)):
 				result = test.Result{
 					Result:  test.Error,
@@ -85,8 +85,11 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 					Label:   sequenceEventForUI.Label,
 					Message: "Timeout",
 				}
-				SendTestResultEvent(ctx, result)
 			}
+			ctx.ctxMutex.Lock()
+			SendTestResultEvent(ctx, result)
+			SendDebugInfoEvent(ctx, result.Result, result.Site, result.Label, "Test finished with result: "+result.Message+" On retry: "+fmt.Sprintf("%v", result.Retried))
+			ctx.ctxMutex.Unlock()
 			if ctx.graphicInterface == nil {
 				fmt.Println(result)
 			}
@@ -199,8 +202,6 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 }
 
 func SendDebugInfoEvent(ctx *applicationContext, result test.ResultType, site int, label, message string) {
-	ctx.ctxMutex.Lock()
-	defer ctx.ctxMutex.Unlock()
 	ctx.eventBus.Publish(event.Event{
 		Type: "graphicEvent",
 		Data: event.GraphicEvent{
@@ -216,8 +217,6 @@ func SendDebugInfoEvent(ctx *applicationContext, result test.ResultType, site in
 }
 
 func SendDeviceInitEvent(ctx *applicationContext, result test.ResultType, site int, label string) {
-	ctx.ctxMutex.Lock()
-	defer ctx.ctxMutex.Unlock()
 	ctx.eventBus.Publish(event.Event{
 		Type: "graphicEvent",
 		Data: event.GraphicEvent{
@@ -232,8 +231,6 @@ func SendDeviceInitEvent(ctx *applicationContext, result test.ResultType, site i
 }
 
 func SendSequenceEndEvent(ctx *applicationContext, result test.ResultType, site int) {
-	ctx.ctxMutex.Lock()
-	defer ctx.ctxMutex.Unlock()
 	ctx.eventBus.Publish(event.Event{
 		Type: "graphicEvent",
 		Data: event.GraphicEvent{
@@ -247,8 +244,6 @@ func SendSequenceEndEvent(ctx *applicationContext, result test.ResultType, site 
 }
 
 func SendTestResultEvent(ctx *applicationContext, result test.Result) {
-	ctx.ctxMutex.Lock()
-	defer ctx.ctxMutex.Unlock()
 	ctx.eventBus.Publish(event.Event{
 		Type: "graphicEvent",
 		Data: event.GraphicEvent{
@@ -259,8 +254,6 @@ func SendTestResultEvent(ctx *applicationContext, result test.Result) {
 }
 
 func SendTestStartedEvent(ctx *applicationContext, id uint, site int, label string) {
-	ctx.ctxMutex.Lock()
-	defer ctx.ctxMutex.Unlock()
 	ctx.eventBus.Publish(event.Event{
 		Type: "graphicEvent",
 		Data: event.GraphicEvent{
