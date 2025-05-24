@@ -43,17 +43,26 @@ func (t *TviewInterface) GraphicEventHandler() {
 	masterLayout := tview.NewFlex()
 
 	// Create layout for test page - test results and site status
+	sequenceBox := tview.NewFlex()
 	testBox := tview.NewFlex()
+	resultBox := tview.NewFlex()
 	// Site boxes - containers for results of tests
 	siteBoxes := make(map[int]*tview.TextView)
+	resultBoxes := make(map[int]*tview.TextView)
 	for i := range t.sites {
 		siteBoxes[i] = tview.NewTextView().SetDynamicColors(true).SetWordWrap(true)
 		siteBoxes[i].SetBorder(true).SetTitle("Site" + fmt.Sprintf("%v", i))
+		resultBoxes[i] = tview.NewTextView().SetTextAlign(tview.AlignCenter)
+		resultBoxes[i].SetBorder(true)
 	}
 	for i := range siteBoxes {
 		testBox.AddItem(siteBoxes[i], 0, 1, false)
+		resultBox.AddItem(resultBoxes[i], 0, 1, false)
 	}
-	testBox.SetBorder(true).SetTitle(" Sequence ")
+	sequenceBox.SetDirection(tview.FlexRow)
+	sequenceBox.AddItem(testBox, 0, 1, false)
+	sequenceBox.AddItem(resultBox, 6, 1, false)
+	sequenceBox.SetBorder(true).SetTitle(" Sequence ")
 
 	info := tview.NewTextView().
 		SetRegions(true).
@@ -66,6 +75,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 	// Create page for debug information
 	debugBox := tview.NewFlex()
 	debugTextField := tview.NewTextView()
+	debugTextField.SetDynamicColors(true)
 	debugBox.AddItem(debugTextField, 0, 1, false)
 	debugBox.SetBorder(true).SetTitle(" Debug Info ")
 
@@ -78,11 +88,6 @@ func (t *TviewInterface) GraphicEventHandler() {
 	}
 	for i, file := range configFiles {
 		configList.AddItem(file.Name(), "", rune(i+1), func() {
-			// app.QueueUpdateDraw(func() {
-			// 	for _, siteBox := range siteBoxes {
-			// 		siteBox.Clear()
-			// 	}
-			// })
 			t.returnChannel <- event.ControlEvent{
 				Type: "CONFIGPICK",
 				Data: file.Name(),
@@ -107,7 +112,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 	configBox.SetBorder(true).SetTitle(" Config Picker ")
 
 	// Place created pages into main container and set keyboard shortcuts
-	pages.AddPage("Sequence", testBox, true, true)
+	pages.AddPage("Sequence", sequenceBox, true, true)
 	pages.AddPage("DebugInfo", debugBox, true, false)
 	pages.AddPage("ConfigPicker", configBox, true, false)
 	masterLayout.SetInputCapture(func(tcellEvent *tcell.EventKey) *tcell.EventKey {
@@ -125,13 +130,18 @@ func (t *TviewInterface) GraphicEventHandler() {
 					siteBox.Clear()
 					siteBox.SetTextColor(tcell.ColorWhite)
 				}
+				for _, resultBox := range resultBoxes {
+					resultBox.Clear()
+					resultBox.SetBackgroundColor(tcell.ColorDarkBlue)
+					fmt.Fprintf(resultBox, "Test in progress")
+				}
 				t.returnChannel <- event.ControlEvent{
 					Type: "START",
 				}
 			}
 		} else if tcellEvent.Key() == tcell.KeyF3 {
 			pages.SwitchToPage("ConfigPicker")
-		} else if tcellEvent.Key() == tcell.KeyEsc {
+		} else if tcellEvent.Key() == tcell.KeyCtrlQ {
 			app.Stop()
 			t.returnChannel <- event.ControlEvent{
 				Type: "QUIT",
@@ -209,16 +219,22 @@ func (t *TviewInterface) GraphicEventHandler() {
 					t.sitesFinished = 0
 				}
 				app.QueueUpdateDraw(func() {
+					resultBoxes[graphicEvent.Result.Site].Clear()
 					if graphicEvent.Result.Result == test.Pass {
-						siteBoxes[graphicEvent.Result.Site].SetTextColor(tcell.ColorGreen)
+						// siteBoxes[graphicEvent.Result.Site].SetBackgroundColor(tcell.ColorDarkGreen)
+						resultBoxes[graphicEvent.Result.Site].SetBackgroundColor(tcell.ColorDarkGreen)
+						fmt.Fprintf(resultBoxes[graphicEvent.Result.Site], "%s", graphicEvent.Result.Result)
 					} else {
-						siteBoxes[graphicEvent.Result.Site].SetTextColor(tcell.ColorRed)
+						// siteBoxes[graphicEvent.Result.Site].SetBackgroundColor(tcell.ColorDarkRed)
+						resultBoxes[graphicEvent.Result.Site].SetBackgroundColor(tcell.ColorDarkRed)
+						fmt.Fprintf(resultBoxes[graphicEvent.Result.Site], "%s", graphicEvent.Result.Result)
 					}
 				})
 			case "debugInfo":
 				app.QueueUpdateDraw(func() {
 					result := graphicEvent.Result
-					fmt.Fprintf(debugTextField, "%s: Site:%d %d %s %s: %s \n", time.Now().Format("15:4:5"), result.Site, result.Id, result.Result, result.Label, result.Message)
+					fmt.Fprintf(debugTextField, "[gray]%s: [white]Site:%d %d %s %s: %s \n", time.Now().Format("15:4:5"), result.Site, result.Id, result.Result, result.Label, result.Message)
+					debugTextField.ScrollToEnd()
 				})
 			default:
 				continue
