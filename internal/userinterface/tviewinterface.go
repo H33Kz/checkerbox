@@ -199,6 +199,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 							fmt.Fprintf(siteBoxes[graphicEvent.Result.Site], "%v %s %v: %v \n", result.Id, result.Result, result.Label, result.Message)
 						}
 					}
+					siteBoxes[graphicEvent.Result.Site].ScrollToEnd()
 				})
 				// Event for end of the test sequence. Changes color of text based of and outcome
 			case "sequenceEnd":
@@ -226,7 +227,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 	}()
 
 	// Start tview application
-	if err := app.SetRoot(masterLayout, true).Run(); err != nil {
+	if err := app.SetRoot(masterLayout, true).EnableMouse(true).Run(); err != nil {
 		panic(err)
 	}
 }
