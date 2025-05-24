@@ -2,6 +2,7 @@ package main
 
 import (
 	"checkerbox/internal/config"
+	"checkerbox/internal/data"
 	"checkerbox/internal/device"
 	"checkerbox/internal/event"
 	"checkerbox/internal/test"
@@ -11,10 +12,14 @@ import (
 	"log"
 	"sync"
 	"time"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
 )
 
 type applicationContext struct {
 	ctxMutex           sync.Mutex
+	configSource       string
 	noError            bool
 	appSettings        *config.AppSettings
 	config             *config.Config
@@ -24,6 +29,7 @@ type applicationContext struct {
 	deviceErrors       []error
 	graphicInterface   userinterface.GraphicInterface
 	uiReturnChannel    chan event.ControlEvent
+	reportDatabase     *gorm.DB
 }
 
 func main() {
@@ -45,6 +51,7 @@ func main() {
 				newCtx.graphicInterface = ctx.graphicInterface
 				newCtx.uiReturnChannel = ctx.uiReturnChannel
 				ctx = newCtx
+				ctx.configSource = receivedEvent.Data.(string)
 				loadAppSettings(&ctx)
 				reloadConfiguration(&ctx, "./config/"+receivedEvent.Data.(string))
 			}
@@ -61,6 +68,14 @@ func main() {
 func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *applicationContext, siteId int) {
 	siteResultChannel := make(chan test.Result)
 	sequenceFailed := false
+
+	report := data.NewReport()
+	ctx.ctxMutex.Lock()
+	report.SetSource(ctx.configSource)
+	ctx.ctxMutex.Unlock()
+	report.SetSite(siteId)
+	report.AppendReportString("Sequence Started \n")
+
 	for range sequenceEventsList.Len() {
 		singleSequenceEvent := sequenceEventsList.Dequeue()
 		singleSequenceEvent.ReturnChannel = siteResultChannel
@@ -98,18 +113,25 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 				break
 			}
 		}
+		report.AppendReportString(fmt.Sprintf("%v %s %v: %v (%v) \n", result.Id, result.Result, result.Label, result.Message, result.Retried+1))
 		if (result.Result == test.Fail || result.Result == test.Error) && !ctx.noError {
 			sequenceFailed = true
 			sequenceEventsList.Flush()
 			SendSequenceEndEvent(ctx, test.Fail, siteId)
+			report.SetOverallResult(test.Fail)
 			break
 		} else if (result.Result == test.Fail || result.Result == test.Error) && ctx.noError {
 			sequenceFailed = true
+			report.SetOverallResult(test.Fail)
 		}
 	}
 	if !sequenceFailed {
 		SendSequenceEndEvent(ctx, test.Pass, siteId)
+		report.SetOverallResult(test.Pass)
 	}
+	ctx.ctxMutex.Lock()
+	ctx.reportDatabase.Create(&report)
+	ctx.ctxMutex.Unlock()
 }
 
 func loadAppSettings(ctx *applicationContext) {
@@ -117,6 +139,8 @@ func loadAppSettings(ctx *applicationContext) {
 	ctx.appSettings = config.NewAppSettings()
 	ctx.sequenceEventLists = make(map[int]*util.Queue[event.Event])
 	ctx.eventBus = event.NewEventBus()
+	ctx.reportDatabase, _ = gorm.Open(sqlite.Open("reports.db"), &gorm.Config{})
+	ctx.reportDatabase.AutoMigrate(&data.Report{})
 	if ctx.graphicInterface == nil {
 		ctx.uiReturnChannel = make(chan event.ControlEvent)
 		ctx.graphicInterface = config.GraphicalInterfaceResolver(*ctx.appSettings, ctx.uiReturnChannel)
