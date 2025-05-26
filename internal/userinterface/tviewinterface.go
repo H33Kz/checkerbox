@@ -64,13 +64,21 @@ func (t *TviewInterface) GraphicEventHandler() {
 	sequenceBox.AddItem(resultBox, 6, 1, false)
 	sequenceBox.SetBorder(true).SetTitle(" Sequence ")
 
+	navBar := tview.NewFlex()
 	info := tview.NewTextView().
+		SetText("F1 [darkcyan]Sequence [white] F2 [darkcyan]DebugInfo [white] F3 [darkcyan]ConfigPicker [white]").
 		SetRegions(true).
 		SetDynamicColors(true).
-		SetWrap(false)
-	fmt.Fprintf(info, `F1 [darkcyan]Sequence [white][""]`)
-	fmt.Fprintf(info, `F2 [darkcyan]DebugInfo [white][""]`)
-	fmt.Fprintf(info, `F3 [darkcyan]ConfigPicker [white][""]`)
+		SetTextAlign(tview.AlignLeft)
+	info2 := tview.NewTextView().
+		SetText("F10 [darkcyan]noError [white] F12 [darkcyan]SeqStart [white]").
+		SetRegions(true).
+		SetDynamicColors(true).
+		SetTextAlign(tview.AlignRight)
+	navBar.
+		SetDirection(tview.FlexColumn).
+		AddItem(info, 0, 1, false).
+		AddItem(info2, 0, 1, false)
 
 	// Create page for debug information
 	debugBox := tview.NewFlex()
@@ -97,8 +105,9 @@ func (t *TviewInterface) GraphicEventHandler() {
 	}
 	modalFlex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(tview.NewTextView().SetText("Choose config file"), 2, 1, false).
+		AddItem(tview.NewTextView().SetText("Choose config file").SetTextAlign(tview.AlignCenter), 2, 1, false).
 		AddItem(configList, 0, 2, true)
+	modalFlex.SetBorder(true)
 	configBoxWidthLayout := tview.NewFlex().
 		AddItem(nil, 0, 1, false).
 		AddItem(modalFlex, 40, 0, true).
@@ -153,7 +162,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 	masterLayout.
 		SetDirection(tview.FlexRow).
 		AddItem(pages, 0, 1, true).
-		AddItem(info, 1, 1, false)
+		AddItem(navBar, 1, 1, false)
 
 	// Main event loop - started in separate goroutine
 	// Sets UI elements based on events received from main goroutine
