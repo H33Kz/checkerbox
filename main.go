@@ -130,17 +130,22 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 		report.SetOverallResult(test.Pass)
 	}
 	ctx.ctxMutex.Lock()
-	ctx.reportDatabase.Create(&report)
+	SendDBData(ctx, report)
 	ctx.ctxMutex.Unlock()
 }
 
 func loadAppSettings(ctx *applicationContext) {
 	// Load basic app settings on startup
+	var err error
 	ctx.appSettings = config.NewAppSettings()
 	ctx.sequenceEventLists = make(map[int]*util.Queue[event.Event])
 	ctx.eventBus = event.NewEventBus()
-	ctx.reportDatabase, _ = gorm.Open(sqlite.Open("reports.db"), &gorm.Config{})
-	ctx.reportDatabase.AutoMigrate(&data.Report{})
+	ctx.reportDatabase, err = gorm.Open(sqlite.Open("reports.db"), &gorm.Config{})
+	if err != nil {
+		ctx.reportDatabase = nil
+	} else {
+		ctx.reportDatabase.AutoMigrate(&data.Report{})
+	}
 	if ctx.graphicInterface == nil {
 		ctx.uiReturnChannel = make(chan event.ControlEvent)
 		ctx.graphicInterface = config.GraphicalInterfaceResolver(*ctx.appSettings, ctx.uiReturnChannel)
@@ -222,6 +227,12 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 	// Start goroutines from device modules that handle events sent
 	for _, device := range ctx.devices {
 		go device.SequenceEventHandler()
+	}
+}
+
+func SendDBData(ctx *applicationContext, value any) {
+	if ctx.reportDatabase != nil {
+		ctx.reportDatabase.Create(value)
 	}
 }
 
