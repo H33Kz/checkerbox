@@ -87,7 +87,9 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 			ctx.eventBus.Publish(singleSequenceEvent)
 			sequenceEventForUI := singleSequenceEvent.Data.(event.SequenceEvent)
 			SendTestStartedEvent(ctx, sequenceEventForUI.Id, sequenceEventForUI.Site, sequenceEventForUI.Label)
-			SendDebugInfoEvent(ctx, test.InProgress, sequenceEventForUI.Site, sequenceEventForUI.Label, "Test started")
+			log := data.NewCustomLog("mainloop", sequenceEventForUI.Label+"| Test started", sequenceEventForUI.Site, data.INFO)
+			SendDebugInfoEvent(ctx, *log)
+			ctx.logDatabase.Create(log)
 			ctx.ctxMutex.Unlock()
 
 			select {
@@ -103,9 +105,16 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 				}
 			}
 			ctx.ctxMutex.Lock()
-			ctx.logDatabase.Create(data.NewResultLog(sequenceEventForUI.DeviceName, result))
 			SendTestResultEvent(ctx, result)
-			SendDebugInfoEvent(ctx, result.Result, result.Site, result.Label, "Test finished with result: "+result.Message+" On retry: "+fmt.Sprintf("%v", result.Retried))
+			var logType data.LogType
+			if result.Result == test.Error {
+				logType = data.ERROR
+			} else {
+				logType = data.INFO
+			}
+			log = data.NewCustomLog(sequenceEventForUI.DeviceName, result.Label+"|Test finished with result: "+result.Message+" On retry: "+fmt.Sprintf("%v", result.Retried), result.Site, logType)
+			ctx.logDatabase.Create(log)
+			SendDebugInfoEvent(ctx, *log)
 			ctx.ctxMutex.Unlock()
 			if ctx.graphicInterface == nil {
 				fmt.Println(result)
@@ -199,8 +208,8 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 
 	// I dont know why but first event sent is never received by UI routine and changing timing doesn't help
 	// Doing it twice dodges the issue
-	SendDebugInfoEvent(ctx, test.Pass, 0, "", "Configuration Loading started\n")
-	SendDebugInfoEvent(ctx, test.Pass, 0, "", "Configuration Loading started\n")
+	SendDebugInfoEvent(ctx, *data.NewCustomLog("mainloop", "Configuration loading started", 99, data.INFO))
+	SendDebugInfoEvent(ctx, *data.NewCustomLog("mainloop", "Configuration loading started", 99, data.INFO))
 	ctx.logDatabase.Create(data.NewCustomLog("mainloop", "Configuration loading started", 99, data.INFO))
 
 	for i := 0; i <= ctx.appSettings.Sites-1; i++ {
@@ -220,11 +229,11 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 		if initializedDevice != nil {
 			ctx.devices = append(ctx.devices, initializedDevice)
 			SendDeviceInitEvent(ctx, test.Pass, deviceDeclaration.Site, deviceDeclaration.DeviceName)
-			SendDebugInfoEvent(ctx, test.Pass, deviceDeclaration.Site, deviceDeclaration.DeviceName, "Device initiated\n"+deviceInitErrorString)
+			SendDebugInfoEvent(ctx, *data.NewCustomLog(deviceDeclaration.DeviceName, "Device initiated", deviceDeclaration.Site, data.INFO))
 			ctx.logDatabase.Create(data.NewCustomLog(deviceDeclaration.DeviceName, "Device initiated", deviceDeclaration.Site, data.INFO))
 		} else {
 			SendDeviceInitEvent(ctx, test.Error, deviceDeclaration.Site, deviceDeclaration.DeviceName)
-			SendDebugInfoEvent(ctx, test.Error, deviceDeclaration.Site, deviceDeclaration.DeviceName, "Error while initializing device:\n"+deviceInitErrorString)
+			SendDebugInfoEvent(ctx, *data.NewCustomLog(deviceDeclaration.DeviceName, "Error while initializing device:"+deviceInitErrorString, deviceDeclaration.Site, data.ERROR))
 			ctx.logDatabase.Create(data.NewCustomLog(deviceDeclaration.DeviceName, "Error while initializing device:"+deviceInitErrorString, deviceDeclaration.Site, data.ERROR))
 		}
 	}
@@ -247,17 +256,12 @@ func SendDBData(ctx *applicationContext, value any) {
 	}
 }
 
-func SendDebugInfoEvent(ctx *applicationContext, result test.ResultType, site int, label, message string) {
+func SendDebugInfoEvent(ctx *applicationContext, log data.Log) {
 	ctx.eventBus.Publish(event.Event{
 		Type: "graphicEvent",
 		Data: event.GraphicEvent{
 			Type: "debugInfo",
-			Result: test.Result{
-				Result:  result,
-				Label:   label,
-				Site:    site,
-				Message: message,
-			},
+			Log:  log,
 		},
 	})
 }

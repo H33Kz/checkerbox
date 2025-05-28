@@ -2,6 +2,7 @@ package data
 
 import (
 	"checkerbox/internal/test"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -48,4 +49,8 @@ func NewResultLog(source string, result test.Result) *Log {
 		Message: result.Result.String() + "|" + result.Label + "|" + result.Message,
 		Site:    result.Site,
 	}
+}
+
+func (log *Log) Print() string {
+	return log.Source + " " + log.LogType + " Site:" + fmt.Sprintf("%v", log.Site) + " " + log.Message + "\n"
 }

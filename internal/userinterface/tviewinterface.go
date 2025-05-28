@@ -241,8 +241,9 @@ func (t *TviewInterface) GraphicEventHandler() {
 				})
 			case "debugInfo":
 				app.QueueUpdateDraw(func() {
-					result := graphicEvent.Result
-					fmt.Fprintf(debugTextField, "[gray]%s: [white]Site:%d %d %s %s: %s \n", time.Now().Format("15:4:5"), result.Site, result.Id, result.Result, result.Label, result.Message)
+					// result := graphicEvent.Result
+					// fmt.Fprintf(debugTextField, "[gray]%s: [white]Site:%d %d %s %s: %s \n", time.Now().Format("15:4:5"), result.Site, result.Id, result.Result, result.Label, result.Message)
+					fmt.Fprintf(debugTextField, "[gray]%s [white]%s", time.Now().Format("15:4:5"), graphicEvent.Log.Print())
 					debugTextField.ScrollToEnd()
 				})
 			default:
