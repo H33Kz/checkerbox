@@ -1,6 +1,7 @@
 package event
 
 import (
+	"checkerbox/internal/data"
 	"checkerbox/internal/test"
 	"slices"
 	"sync"
@@ -25,6 +26,7 @@ type SequenceEvent struct {
 type GraphicEvent struct {
 	Type   string
 	Result test.Result
+	Log    data.Log
 }
 
 type ControlEvent struct {
