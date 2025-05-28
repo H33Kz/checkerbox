@@ -30,6 +30,7 @@ type applicationContext struct {
 	graphicInterface   userinterface.GraphicInterface
 	uiReturnChannel    chan event.ControlEvent
 	reportDatabase     *gorm.DB
+	logDatabase        *gorm.DB
 }
 
 func main() {
@@ -102,6 +103,7 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 				}
 			}
 			ctx.ctxMutex.Lock()
+			ctx.logDatabase.Create(data.NewResultLog(sequenceEventForUI.DeviceName, result))
 			SendTestResultEvent(ctx, result)
 			SendDebugInfoEvent(ctx, result.Result, result.Site, result.Label, "Test finished with result: "+result.Message+" On retry: "+fmt.Sprintf("%v", result.Retried))
 			ctx.ctxMutex.Unlock()
@@ -145,6 +147,12 @@ func loadAppSettings(ctx *applicationContext) {
 		ctx.reportDatabase = nil
 	} else {
 		ctx.reportDatabase.AutoMigrate(&data.Report{})
+	}
+	ctx.logDatabase, err = gorm.Open(sqlite.Open("log.db"), &gorm.Config{})
+	if err != nil {
+		ctx.logDatabase = nil
+	} else {
+		ctx.logDatabase.AutoMigrate(&data.Log{})
 	}
 	if ctx.graphicInterface == nil {
 		ctx.uiReturnChannel = make(chan event.ControlEvent)
@@ -193,6 +201,7 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 	// Doing it twice dodges the issue
 	SendDebugInfoEvent(ctx, test.Pass, 0, "", "Configuration Loading started\n")
 	SendDebugInfoEvent(ctx, test.Pass, 0, "", "Configuration Loading started\n")
+	ctx.logDatabase.Create(data.NewCustomLog("mainloop", "Configuration loading started", 99, data.INFO))
 
 	for i := 0; i <= ctx.appSettings.Sites-1; i++ {
 		ctx.devices = append(ctx.devices, device.NewSequenceDevice(i))
@@ -212,9 +221,11 @@ func reloadConfiguration(ctx *applicationContext, path string) {
 			ctx.devices = append(ctx.devices, initializedDevice)
 			SendDeviceInitEvent(ctx, test.Pass, deviceDeclaration.Site, deviceDeclaration.DeviceName)
 			SendDebugInfoEvent(ctx, test.Pass, deviceDeclaration.Site, deviceDeclaration.DeviceName, "Device initiated\n"+deviceInitErrorString)
+			ctx.logDatabase.Create(data.NewCustomLog(deviceDeclaration.DeviceName, "Device initiated", deviceDeclaration.Site, data.INFO))
 		} else {
 			SendDeviceInitEvent(ctx, test.Error, deviceDeclaration.Site, deviceDeclaration.DeviceName)
 			SendDebugInfoEvent(ctx, test.Error, deviceDeclaration.Site, deviceDeclaration.DeviceName, "Error while initializing device:\n"+deviceInitErrorString)
+			ctx.logDatabase.Create(data.NewCustomLog(deviceDeclaration.DeviceName, "Error while initializing device:"+deviceInitErrorString, deviceDeclaration.Site, data.ERROR))
 		}
 	}
 
