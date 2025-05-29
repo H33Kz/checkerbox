@@ -67,7 +67,7 @@ func main() {
 }
 
 func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *applicationContext, siteId int) {
-	siteResultChannel := make(chan test.Result)
+	siteResultChannel := make(chan test.Result, 100)
 	sequenceFailed := false
 
 	report := data.NewReport()

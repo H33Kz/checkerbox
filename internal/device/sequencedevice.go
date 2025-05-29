@@ -4,6 +4,7 @@ import (
 	"checkerbox/internal/event"
 	"checkerbox/internal/test"
 	"fmt"
+	"math/rand/v2"
 	"time"
 )
 
@@ -15,7 +16,7 @@ type SequenceDevice struct {
 func NewSequenceDevice(site int) *SequenceDevice {
 	return &SequenceDevice{
 		site:         site,
-		eventChannel: make(chan event.Event),
+		eventChannel: make(chan event.Event, 100),
 	}
 }
 
@@ -51,6 +52,10 @@ func (s *SequenceDevice) functionResolver(sequenceEvent event.SequenceEvent) tes
 		if !ok {
 			return test.Result{Result: test.Error, Message: "Error parsing time to wait"}
 		}
+		time.Sleep(time.Duration(data) * time.Millisecond)
+		return test.Result{Result: test.Done, Message: "Wait " + fmt.Sprintf("%v", data) + "mS"}
+	case "WaitRand":
+		data := rand.IntN(1001) * sequenceEvent.Site
 		time.Sleep(time.Duration(data) * time.Millisecond)
 		return test.Result{Result: test.Done, Message: "Wait " + fmt.Sprintf("%v", data) + "mS"}
 	default:

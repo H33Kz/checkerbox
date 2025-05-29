@@ -24,7 +24,7 @@ func NewGenericUart(site int, address string, baudrate int) (*GenericUart, error
 	return &GenericUart{
 		site:         site,
 		port:         port,
-		eventChannel: make(chan event.Event),
+		eventChannel: make(chan event.Event, 100),
 	}, nil
 }
 

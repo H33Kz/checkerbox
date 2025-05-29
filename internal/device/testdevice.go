@@ -14,7 +14,7 @@ type TestDevice struct {
 func NewTestDevice(site int) (*TestDevice, error) {
 	return &TestDevice{
 		site:         int(site),
-		eventChannel: make(chan event.Event),
+		eventChannel: make(chan event.Event, 100),
 	}, nil
 }
 
