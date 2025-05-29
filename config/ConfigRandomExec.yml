@@ -1,0 +1,91 @@
+hardware:
+- site: 0
+  device_name: testdevice
+- site: 1
+  device_name: testdevice
+#TODO Stage separating
+sequence:
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
+- step_label: Send test command
+  retry: 3
+  device: sequence
+  timeout: 2000
+  stepsettings:
+      function: WaitRand
