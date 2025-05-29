@@ -8,84 +8,84 @@ sequence:
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
 - step_label: Send test command
   retry: 3
   device: sequence
-  timeout: 2000
+  timeout: 10000
   stepsettings:
       function: WaitRand
