@@ -17,6 +17,7 @@ type TviewInterface struct {
 	sites           int
 	sitesFinished   int
 	sequenceRunning bool
+	noError         bool
 }
 
 func NewTviewInterace(sites int, returnChannel chan event.ControlEvent) *TviewInterface {
@@ -26,6 +27,7 @@ func NewTviewInterace(sites int, returnChannel chan event.ControlEvent) *TviewIn
 		sites:           sites,
 		sitesFinished:   0,
 		sequenceRunning: false,
+		noError:         false,
 	}
 }
 
@@ -71,7 +73,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 		SetDynamicColors(true).
 		SetTextAlign(tview.AlignLeft)
 	info2 := tview.NewTextView().
-		SetText("F10 [darkcyan]noError [white] F12 [darkcyan]SeqStart [white]").
+		SetText("F10 [darkcyan]noError [white] F12 [darkcyan]SeqStart [white] CTRL+Q [darkcyan]Exit [white]").
 		SetRegions(true).
 		SetDynamicColors(true).
 		SetTextAlign(tview.AlignRight)
@@ -129,6 +131,16 @@ func (t *TviewInterface) GraphicEventHandler() {
 			pages.SwitchToPage("Sequence")
 		} else if tcellEvent.Key() == tcell.KeyF2 {
 			pages.SwitchToPage("DebugInfo")
+		} else if tcellEvent.Key() == tcell.KeyF10 {
+			t.noError = !t.noError
+			if t.noError {
+				info2.SetText("F10 [red]noError [white] F12 [darkcyan]SeqStart [white] CTRL+Q [darkcyan]Exit [white]")
+			} else {
+				info2.SetText("F10 [darkcyan]noError [white] F12 [darkcyan]SeqStart [white] CTRL+Q [darkcyan]Exit [white]")
+			}
+			t.returnChannel <- event.ControlEvent{
+				Type: "NOERROR",
+			}
 		} else if tcellEvent.Key() == tcell.KeyF12 {
 			if !t.sequenceRunning {
 				t.sequenceRunning = true

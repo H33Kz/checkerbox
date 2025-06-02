@@ -96,3 +96,22 @@ sequence:
       function: Send-Receive
       data: test
       threshold: test
+- step_label: Send test command
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction1
+- step_label: Send test command2
+  retry: 3
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction2
+- step_label: Send test command3
+  retry: 20
+  device: testdevice
+  timeout: 1000
+  stepsettings:
+      function: TestAction3
+

@@ -55,6 +55,8 @@ func main() {
 				ctx.configSource = receivedEvent.Data.(string)
 				loadAppSettings(&ctx)
 				reloadConfiguration(&ctx, "./config/"+receivedEvent.Data.(string))
+			case "NOERROR":
+				ctx.noError = !ctx.noError
 			}
 		}
 	} else {
@@ -139,6 +141,9 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 	if !sequenceFailed {
 		SendSequenceEndEvent(ctx, test.Pass, siteId)
 		report.SetOverallResult(test.Pass)
+	} else {
+		SendSequenceEndEvent(ctx, test.Fail, siteId)
+		report.SetOverallResult(test.Fail)
 	}
 	ctx.ctxMutex.Lock()
 	SendDBData(ctx, report)
