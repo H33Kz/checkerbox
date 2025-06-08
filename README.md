@@ -114,11 +114,12 @@ All report data is stored locally in *reports.db* file in project directory. App
 ## Prospect of developement
 Right now this project although functional has several aspects that draw it back and functionalities that could be implemented to improve it's stance as a proper base for functional testing platform:
 
-Improvements:
+Improvements to existing components:
 * **Generating Reports** - Right now report generation is in it's early stages, it includes basic information and all sequence steps are stored as plaint text in one of the records. This can cause problems with longer sequences and makes it impossible to create report analyzing tools that could go into details on every step. Better approach would be to create One-Mant junction table with overall reports as one table and all steps in second table which would contain foreign key (report id).
 * **Logging** - Logging is handled by main loop of the application and derives results passed by module to more readable form. Other approach would be to create *Logger* Singleton that could be instantiated troughout mainloop and modules alike making it more robust and detailed
 * **Better error/exception handling** - Because in this kind of application continous operation is of essence errors that won't impact main event loop or UI operation won't result in panicking. This would call for custom error component that differentiates between different kind of errors for more consistent error handling
-Functionality:
+
+Functionality for addition:
 * **Configuration** - Config files could be modified in UI component of the application. This would ensure that config files are properly formatted
 * **More generic modules** - Although this project serves as a base, it could ship with more generic modules serving as base
 * **Synchronization** - Most test sequencers ship with synchronization components that allow for better control over sequence execution between sites (i.e semaphores or sequence locks)
