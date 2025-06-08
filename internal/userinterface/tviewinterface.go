@@ -66,6 +66,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 	sequenceBox.AddItem(resultBox, 6, 1, false)
 	sequenceBox.SetBorder(true).SetTitle(" Sequence ")
 
+	// Create layout for navigation section at the bottom of the screen
 	navBar := tview.NewFlex()
 	info := tview.NewTextView().
 		SetText("F1 [darkcyan]Sequence [white] F2 [darkcyan]DebugInfo [white] F3 [darkcyan]ConfigPicker [white]").
@@ -171,6 +172,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 		return tcellEvent
 	})
 
+	// Set Master layout that will be root of UI
 	masterLayout.
 		SetDirection(tview.FlexRow).
 		AddItem(pages, 0, 1, true).
@@ -232,7 +234,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 					}
 					siteBoxes[graphicEvent.Result.Site].ScrollToEnd()
 				})
-				// Event for end of the test sequence. Changes color of text based of and outcome
+				// Event for end of the test sequence. Changes flags to unlock starting test control
 			case "sequenceEnd":
 				t.sitesFinished++
 				if t.sitesFinished == t.sites {
@@ -251,6 +253,7 @@ func (t *TviewInterface) GraphicEventHandler() {
 						fmt.Fprintf(resultBoxes[graphicEvent.Result.Site], "%s", graphicEvent.Result.Result)
 					}
 				})
+			// Event adding debug information to debug page
 			case "debugInfo":
 				app.QueueUpdateDraw(func() {
 					// result := graphicEvent.Result

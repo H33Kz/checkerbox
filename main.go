@@ -34,19 +34,24 @@ type applicationContext struct {
 }
 
 func main() {
+	// Loading basic app configuration - site number and UI engine
 	var ctx applicationContext
 	loadAppSettings(&ctx)
 
+	// Start main event loop if graphic interface was specified, otherwise load deafult config and start execution
 	if ctx.graphicInterface != nil {
 	out:
 		for receivedEvent := range ctx.uiReturnChannel {
 			switch receivedEvent.Type {
+			// Event that starts sequence goroutines - sequence execution
 			case "START":
 				for i, sequenceEventList := range ctx.sequenceEventLists {
 					go handleSequence(*sequenceEventList, &ctx, i)
 				}
+			// Event finnishing application execution
 			case "QUIT":
 				break out
+			// Event picking configuration file for sequence - reloads all configuration for application
 			case "CONFIGPICK":
 				newCtx := applicationContext{}
 				newCtx.graphicInterface = ctx.graphicInterface
@@ -55,23 +60,33 @@ func main() {
 				ctx.configSource = receivedEvent.Data.(string)
 				loadAppSettings(&ctx)
 				reloadConfiguration(&ctx, "./config/"+receivedEvent.Data.(string))
+			// Event setting NoError mode
 			case "NOERROR":
 				ctx.noError = !ctx.noError
 			}
 		}
 	} else {
+		// Default execution when graphic engine is not specified
+		// Starts sequence execution
 		reloadConfiguration(&ctx, "./config/config.yml")
 		for i, sequenceEventList := range ctx.sequenceEventLists {
 			go handleSequence(*sequenceEventList, &ctx, i)
 		}
+		// TODO change mechanism for no UI execution - add waitgroup to sequence handlers
 		time.Sleep(time.Second * 10)
 	}
 }
 
+// Function handling sequence execution - receives event queue and sends events to specified modules, receives results and handles them accordingly sending them to UI or printing them to screen
 func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *applicationContext, siteId int) {
+	// Create return channel for receiving results from modules
+	// It has to be buffered, otherwise gouroutines would lock eachother while waiting for response from modules
+	// We dont have to worry about deadlocks because handler sends this return channel in event itself so modules won't cross-talk with different handlers
 	siteResultChannel := make(chan test.Result, 100)
+	// Flag indicating failed sequence - needed because with noError mode it doesnt necessarily mean end of sequence execution
 	sequenceFailed := false
 
+	// Set report instance for db writing
 	report := data.NewReport()
 	ctx.ctxMutex.Lock()
 	report.SetSource(ctx.configSource)
@@ -79,12 +94,16 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 	report.SetSite(siteId)
 	report.AppendReportString("Sequence Started \n")
 
+	// Looping over events in queue
 	for range sequenceEventsList.Len() {
+		// Taking one event and setting return channel
 		singleSequenceEvent := sequenceEventsList.Dequeue()
 		singleSequenceEvent.ReturnChannel = siteResultChannel
 		var result test.Result
+		// Looping with one event however maany retries where specified by loaded config
 		for retried := range singleSequenceEvent.Data.(event.SequenceEvent).Retry {
 
+			// Publish sequence event, UI events and send logging data to database
 			ctx.ctxMutex.Lock()
 			ctx.eventBus.Publish(singleSequenceEvent)
 			sequenceEventForUI := singleSequenceEvent.Data.(event.SequenceEvent)
@@ -94,6 +113,7 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 			ctx.logDatabase.Create(log)
 			ctx.ctxMutex.Unlock()
 
+			// Select on response to return channel or timeout on specified timeout time in config
 			select {
 			case result = <-siteResultChannel:
 				result.Retried = retried
@@ -106,6 +126,7 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 					Message: "Timeout",
 				}
 			}
+			// Log result data (UI and db)
 			ctx.ctxMutex.Lock()
 			SendTestResultEvent(ctx, result)
 			var logType data.LogType
@@ -118,15 +139,19 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 			ctx.logDatabase.Create(log)
 			SendDebugInfoEvent(ctx, *log)
 			ctx.ctxMutex.Unlock()
+			// If no graphic engine, print to standard output
 			if ctx.graphicInterface == nil {
 				fmt.Println(result)
 			}
 
+			// If result is not fail - error, pass, done - break retry loop and continue
 			if result.Result == test.Pass || result.Result == test.Error || result.Result == test.Done {
 				break
 			}
 		}
+		// Append report with data from test
 		report.AppendReportString(fmt.Sprintf("%v %s %v: %v (%v) \n", result.Id, result.Result, result.Label, result.Message, result.Retried+1))
+		// Based on test result and no error mode status either finish execution or continue with overall result as fail
 		if (result.Result == test.Fail || result.Result == test.Error) && !ctx.noError {
 			sequenceFailed = true
 			sequenceEventsList.Flush()
@@ -138,6 +163,7 @@ func handleSequence(sequenceEventsList util.Queue[event.Event], ctx *application
 			report.SetOverallResult(test.Fail)
 		}
 	}
+	// Send sequence end events for UI and send report data to db
 	if !sequenceFailed {
 		SendSequenceEndEvent(ctx, test.Pass, siteId)
 		report.SetOverallResult(test.Pass)

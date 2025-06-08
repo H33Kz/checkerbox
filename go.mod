@@ -6,7 +6,6 @@ toolchain go1.24.3
 
 require (
 	github.com/gdamore/tcell/v2 v2.7.1
-	github.com/glebarez/go-sqlite v1.22.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/rivo/tview v0.0.0-20250501113434-0c592cd31026
 	go.bug.st/serial v1.6.4
@@ -18,6 +17,7 @@ require (
 	github.com/creack/goselect v0.1.2 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
+	github.com/glebarez/go-sqlite v1.22.0 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
